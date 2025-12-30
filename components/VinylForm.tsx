@@ -134,8 +134,11 @@ export default function VinylForm({ vinyl, onSubmit, onCancel }: VinylFormProps)
     setIsClient(true);
   }, []);
 
-  const handleBarcodeScanned = async (ean: string) => {
-    setShowScanner(false);
+  const lookupEAN = async (ean: string) => {
+    if (!ean || ean.trim().length < 8) {
+      return;
+    }
+
     setLoadingEAN(true);
 
     try {
@@ -148,29 +151,36 @@ export default function VinylForm({ vinyl, onSubmit, onCancel }: VinylFormProps)
           ean: data.ean || prev.ean,
           artist: data.artist || prev.artist,
           album: data.album || data.title || prev.album,
+          releaseDate: data.releaseDate || prev.releaseDate,
+          genre: data.genre || prev.genre,
+          label: data.label || prev.label,
           albumArt: data.image || prev.albumArt,
           notes: data.description || prev.notes,
         }));
       } else {
         const error = await response.json();
-        // Still set the EAN even if lookup fails
-        setFormData((prev) => ({
-          ...prev,
-          ean: ean,
-        }));
-        alert(error.error || "EAN scanned but no product information found. You can fill in the details manually.");
+        console.error("EAN lookup error:", error);
+        alert(error.error || `No product information found for EAN ${ean}. You can fill in the details manually.`);
       }
     } catch (error) {
       console.error("Error looking up EAN:", error);
-      // Still set the EAN even if lookup fails
-      setFormData((prev) => ({
-        ...prev,
-        ean: ean,
-      }));
-      alert("EAN scanned but failed to fetch product information. You can fill in the details manually.");
+      alert("Failed to fetch product information. You can fill in the details manually.");
     } finally {
       setLoadingEAN(false);
     }
+  };
+
+  const handleBarcodeScanned = async (ean: string) => {
+    setShowScanner(false);
+    await lookupEAN(ean);
+  };
+
+  const handleEANLookup = async () => {
+    if (!formData.ean || formData.ean.trim().length < 8) {
+      alert("Please enter a valid EAN number (8-13 digits)");
+      return;
+    }
+    await lookupEAN(formData.ean);
   };
 
   return (
@@ -233,39 +243,68 @@ export default function VinylForm({ vinyl, onSubmit, onCancel }: VinylFormProps)
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
                     EAN Number
                   </label>
-                  <button
-                    type="button"
-                    onClick={() => setShowScanner(true)}
-                    className="text-xs px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded transition-colors flex items-center gap-1"
-                  >
-                    <svg
-                      className="w-3 h-3"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleEANLookup}
+                      disabled={loadingEAN || !formData.ean || formData.ean.trim().length < 8}
+                      className="text-xs px-3 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white rounded transition-colors flex items-center gap-1"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
-                      />
-                    </svg>
-                    Scan Barcode
-                  </button>
+                      <svg
+                        className="w-3 h-3"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                        />
+                      </svg>
+                      {loadingEAN ? "Recherche..." : "Rechercher"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowScanner(true)}
+                      className="text-xs px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded transition-colors flex items-center gap-1"
+                    >
+                      <svg
+                        className="w-3 h-3"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
+                        />
+                      </svg>
+                      Scanner
+                    </button>
+                  </div>
                 </div>
                 <input
                   type="text"
                   name="ean"
                   value={formData.ean}
                   onChange={handleChange}
-                  placeholder="EAN-13 or UPC"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && formData.ean && formData.ean.trim().length >= 8) {
+                      e.preventDefault();
+                      handleEANLookup();
+                    }
+                  }}
+                  placeholder="EAN-13 or UPC (then click Rechercher)"
                   disabled={loadingEAN}
                   className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                 />
                 {loadingEAN && (
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    Looking up product information...
+                    Recherche des informations du produit...
                   </p>
                 )}
               </div>
