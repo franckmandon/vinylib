@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Vinyl } from "@/types/vinyl";
 import VinylCard from "./VinylCard";
+import VinylListItem from "./VinylListItem";
 import VinylForm from "./VinylForm";
 import SearchBar from "./SearchBar";
 import Link from "next/link";
@@ -26,6 +27,7 @@ export default function VinylLibrary({ mode = "public" }: VinylLibraryProps) {
   const [sortBy, setSortBy] = useState<"artist" | "album" | "releaseDate" | "rating">("artist");
   const [selectedGenre, setSelectedGenre] = useState("");
   const [filterByOwner, setFilterByOwner] = useState<{ username: string; userId: string } | null>(null);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   
   const isLoggedIn = !!(status === "authenticated" && session?.user);
   const isPersonalMode = mode === "personal";
@@ -82,7 +84,15 @@ export default function VinylLibrary({ mode = "public" }: VinylLibraryProps) {
           const dateB = b.releaseDate ? new Date(b.releaseDate).getTime() : 0;
           return dateB - dateA; // Newest first
         case "rating":
-          return (b.rating || 0) - (a.rating || 0); // Highest first
+          // Calculate average rating for comparison
+          const getAvgRating = (v: Vinyl) => {
+            if (v.ratings && v.ratings.length > 0) {
+              const sum = v.ratings.reduce((acc, r) => acc + r.rating, 0);
+              return sum / v.ratings.length;
+            }
+            return v.rating || 0;
+          };
+          return getAvgRating(b) - getAvgRating(a); // Highest first
         default:
           return 0;
       }
@@ -253,14 +263,45 @@ export default function VinylLibrary({ mode = "public" }: VinylLibraryProps) {
           onGenreChange={setSelectedGenre}
           availableGenres={getAvailableGenres()}
         />
-        {!filterByOwner && (
-          <button
-            onClick={handleAddVinyl}
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-md hover:shadow-lg whitespace-nowrap"
-          >
-            + Add Vinyl
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {/* View Mode Toggle */}
+          <div className="flex items-center gap-1 bg-slate-200 dark:bg-slate-700 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`p-2 rounded transition-colors ${
+                viewMode === "grid"
+                  ? "bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+              }`}
+              aria-label="Grid view"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              </svg>
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={`p-2 rounded transition-colors ${
+                viewMode === "list"
+                  ? "bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+              }`}
+              aria-label="List view"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+          {!filterByOwner && (
+            <button
+              onClick={handleAddVinyl}
+              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-md hover:shadow-lg whitespace-nowrap"
+            >
+              + Add Vinyl
+            </button>
+          )}
+        </div>
       </div>
 
       {showForm && (
@@ -284,7 +325,7 @@ export default function VinylLibrary({ mode = "public" }: VinylLibraryProps) {
             ? "Your vinyl library is empty. Add your first record!"
             : "No vinyls match your search."}
         </div>
-      ) : (
+      ) : viewMode === "grid" ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredVinyls.map((vinyl) => {
             const ownsVinyl = isLoggedIn && session?.user?.id && (
@@ -306,6 +347,44 @@ export default function VinylLibrary({ mode = "public" }: VinylLibraryProps) {
               />
             );
           })}
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="border-b-2 border-slate-300 dark:border-slate-600">
+                <th className="p-3 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">Cover</th>
+                <th className="p-3 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">Artist</th>
+                <th className="p-3 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">Album</th>
+                <th className="p-3 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">Genre</th>
+                <th className="p-3 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">Rating</th>
+                <th className="p-3 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">Owners</th>
+                <th className="p-3 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredVinyls.map((vinyl) => {
+                const ownsVinyl = isLoggedIn && session?.user?.id && (
+                  vinyl.userId === session.user.id || 
+                  vinyl.owners?.some(o => o.userId === session.user.id)
+                );
+                return (
+                  <VinylListItem
+                    key={vinyl.id}
+                    vinyl={vinyl}
+                    onEdit={isLoggedIn ? handleEditVinyl : handleViewDetails}
+                    onDelete={ownsVinyl ? handleDeleteVinyl : undefined}
+                    isLoggedIn={isLoggedIn}
+                    isOwner={!!ownsVinyl}
+                    showOwners={!isPersonalMode} // Show owners on public page
+                    onOwnerClick={(username, userId) => {
+                      router.push(`/?owner=${encodeURIComponent(username)}&ownerId=${encodeURIComponent(userId)}`);
+                    }}
+                  />
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
 
