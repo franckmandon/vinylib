@@ -16,38 +16,6 @@ export default function VinylLibrary() {
   const [sortBy, setSortBy] = useState<"artist" | "album" | "releaseDate" | "rating">("artist");
   const [selectedGenre, setSelectedGenre] = useState("");
 
-  useEffect(() => {
-    fetchVinyls();
-  }, []);
-
-  useEffect(() => {
-    filterAndSortVinyls();
-  }, [filterAndSortVinyls]);
-
-  const getAvailableGenres = (): string[] => {
-    const genres = new Set<string>();
-    vinyls.forEach((vinyl) => {
-      if (vinyl.genre) {
-        genres.add(vinyl.genre);
-      }
-    });
-    return Array.from(genres).sort();
-  };
-
-  const fetchVinyls = async () => {
-    try {
-      const response = await fetch("/api/vinyls");
-      if (response.ok) {
-        const data = await response.json();
-        setVinyls(data);
-      }
-    } catch (error) {
-      console.error("Error fetching vinyls:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const filterAndSortVinyls = useCallback(() => {
     let filtered = [...vinyls];
 
@@ -89,6 +57,38 @@ export default function VinylLibrary() {
 
     setFilteredVinyls(filtered);
   }, [vinyls, searchQuery, sortBy, selectedGenre]);
+
+  useEffect(() => {
+    fetchVinyls();
+  }, []);
+
+  useEffect(() => {
+    filterAndSortVinyls();
+  }, [filterAndSortVinyls]);
+
+  const getAvailableGenres = (): string[] => {
+    const genres = new Set<string>();
+    vinyls.forEach((vinyl) => {
+      if (vinyl.genre) {
+        genres.add(vinyl.genre);
+      }
+    });
+    return Array.from(genres).sort();
+  };
+
+  const fetchVinyls = async () => {
+    try {
+      const response = await fetch("/api/vinyls");
+      if (response.ok) {
+        const data = await response.json();
+        setVinyls(data);
+      }
+    } catch (error) {
+      console.error("Error fetching vinyls:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAddVinyl = () => {
     setEditingVinyl(null);
