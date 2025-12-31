@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 
 export async function GET() {
   try {
-    const vinyls = getVinyls();
+    const vinyls = await getVinyls();
     return NextResponse.json(vinyls);
   } catch (error) {
     console.error("Error fetching vinyls:", error);
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const newVinyl = addVinyl({
+    const newVinyl = await addVinyl({
       artist: data.artist,
       album: data.album,
       releaseDate: data.releaseDate,
@@ -63,7 +63,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const updatedVinyl = updateVinyl(id, updates);
+    const updatedVinyl = await updateVinyl(id, updates);
     
     if (!updatedVinyl) {
       return NextResponse.json(
@@ -94,7 +94,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const deleted = deleteVinyl(id);
+    const deleted = await deleteVinyl(id);
     
     if (!deleted) {
       return NextResponse.json(

@@ -18,15 +18,17 @@ Application web pour gérer votre collection de vinyles.
 - Next.js 14 (App Router)
 - TypeScript
 - Tailwind CSS
+- Redis (Upstash) pour le stockage des données
 - Discogs API
 - Wikipedia API
 
 ## Déploiement
 
-Ce projet est déployé sur [Vercel](https://vercel.com).
+Ce projet est déployé sur [Vercel](https://vercel.com) avec Upstash Redis pour la persistance des données.
 
 ### Variables d'environnement
 
+- `REDIS_URL` : URL de connexion Redis (configurée automatiquement via Vercel Marketplace)
 - `DISCOGS_TOKEN` : Token d'accès personnel Discogs (obtenu sur https://www.discogs.com/settings/developers)
 
 ## Développement local
@@ -44,4 +46,5 @@ npm run build
 # Démarrer en mode production
 npm start
 ```
+
 

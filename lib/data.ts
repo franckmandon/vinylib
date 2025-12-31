@@ -1,61 +1,187 @@
 import { Vinyl } from "@/types/vinyl";
-import fs from "fs";
-import path from "path";
 import { randomUUID } from "crypto";
+import { createClient, RedisClientType } from "redis";
 
-const dataFilePath = path.join(process.cwd(), "data", "vinyls.json");
+const VINYLS_KEY = "vinyls:collection";
 
-export function getDataDir(): string {
+// Initialize Redis client (singleton pattern for serverless)
+let redisClient: RedisClientType | null = null;
+let isConnecting = false;
+
+async function getRedisClient(): Promise<RedisClientType | null> {
+  // Return existing connected client
+  if (redisClient?.isOpen) {
+    return redisClient;
+  }
+
+  // Prevent multiple simultaneous connection attempts
+  if (isConnecting) {
+    // Wait a bit and retry
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    return getRedisClient();
+  }
+
+  // Check for Redis URL environment variable
+  const redisUrl =
+    process.env.REDIS_URL ||
+    process.env.UPSTASH_REDIS_REDIS_URL ||
+    process.env.STORAGE_URL ||
+    process.env.UPSTASH_REDIS_URL;
+
+  if (!redisUrl) {
+    return null;
+  }
+
+  try {
+    isConnecting = true;
+    redisClient = createClient({
+      url: redisUrl,
+    }) as RedisClientType;
+
+    // Handle connection errors
+    redisClient.on("error", (err) => {
+      console.error("Redis Client Error:", err);
+      redisClient = null;
+    });
+
+    await redisClient.connect();
+    isConnecting = false;
+    return redisClient;
+  } catch (error) {
+    console.error("Error connecting to Redis:", error);
+    isConnecting = false;
+    redisClient = null;
+    return null;
+  }
+}
+
+// Fallback to file system for local development
+let useFileSystem = false;
+let fs: typeof import("fs") | null = null;
+let path: typeof import("path") | null = null;
+let dataFilePath: string | null = null;
+
+// Try to use file system only in local development
+if (process.env.NODE_ENV !== "production" && typeof window === "undefined") {
+  try {
+    fs = require("fs");
+    path = require("path");
+    dataFilePath = path.join(process.cwd(), "data", "vinyls.json");
+    useFileSystem = true;
+  } catch {
+    // File system not available
+  }
+}
+
+function getDataDir(): string {
+  if (!useFileSystem || !path) return "";
   const dir = path.join(process.cwd(), "data");
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+  if (!fs?.existsSync(dir)) {
+    fs?.mkdirSync(dir, { recursive: true });
   }
   return dir;
 }
 
-export function getVinyls(): Vinyl[] {
-  getDataDir();
-  if (!fs.existsSync(dataFilePath)) {
-    return [];
-  }
-  try {
-    const fileData = fs.readFileSync(dataFilePath, "utf8");
-    const vinyls: any[] = JSON.parse(fileData);
-    
-    // Migrate old data: convert year to releaseDate if needed
-    const migrated = vinyls.map((vinyl) => {
-      if (vinyl.year && !vinyl.releaseDate) {
-        // Convert year to releaseDate (use January 1st of that year)
-        vinyl.releaseDate = `${vinyl.year}-01-01`;
-        delete vinyl.year;
+export async function getVinyls(): Promise<Vinyl[]> {
+  // Use Redis in production
+  const client = await getRedisClient();
+  if (client) {
+    try {
+      const data = await client.get(VINYLS_KEY);
+      if (!data) {
+        return [];
       }
-      return vinyl;
-    });
-    
-    // Save migrated data if any changes were made
-    if (JSON.stringify(vinyls) !== JSON.stringify(migrated)) {
-      saveVinyls(migrated);
+
+      const vinyls: Vinyl[] = JSON.parse(data);
+
+      // Migrate old data: convert year to releaseDate if needed
+      const migrated = vinyls.map((vinyl) => {
+        if ((vinyl as any).year && !vinyl.releaseDate) {
+          vinyl.releaseDate = `${(vinyl as any).year}-01-01`;
+          delete (vinyl as any).year;
+        }
+        return vinyl;
+      });
+
+      // Save migrated data if any changes were made
+      if (JSON.stringify(vinyls) !== JSON.stringify(migrated)) {
+        await saveVinyls(migrated);
+      }
+
+      return migrated;
+    } catch (error) {
+      console.error("Error reading vinyls from Redis:", error);
+      return [];
     }
-    
-    return migrated;
-  } catch (error) {
-    console.error("Error reading vinyls data:", error);
-    return [];
+  }
+
+  // Fallback to file system for local development
+  if (useFileSystem && fs && dataFilePath) {
+    getDataDir();
+    if (!fs.existsSync(dataFilePath)) {
+      return [];
+    }
+    try {
+      const fileData = fs.readFileSync(dataFilePath, "utf8");
+      const vinyls: any[] = JSON.parse(fileData);
+
+      // Migrate old data
+      const migrated = vinyls.map((vinyl) => {
+        if (vinyl.year && !vinyl.releaseDate) {
+          vinyl.releaseDate = `${vinyl.year}-01-01`;
+          delete vinyl.year;
+        }
+        return vinyl;
+      });
+
+      if (JSON.stringify(vinyls) !== JSON.stringify(migrated)) {
+        saveVinylsSync(migrated);
+      }
+
+      return migrated;
+    } catch (error) {
+      console.error("Error reading vinyls data:", error);
+      return [];
+    }
+  }
+
+  return [];
+}
+
+async function saveVinyls(vinyls: Vinyl[]): Promise<void> {
+  // Use Redis in production
+  const client = await getRedisClient();
+  if (client) {
+    try {
+      await client.set(VINYLS_KEY, JSON.stringify(vinyls));
+    } catch (error) {
+      console.error("Error saving vinyls to Redis:", error);
+      throw error;
+    }
+    return;
+  }
+
+  // Fallback to file system for local development
+  if (useFileSystem && fs && dataFilePath) {
+    saveVinylsSync(vinyls);
   }
 }
 
-export function saveVinyls(vinyls: Vinyl[]): void {
+function saveVinylsSync(vinyls: Vinyl[]): void {
+  if (!useFileSystem || !fs || !dataFilePath) return;
   getDataDir();
   fs.writeFileSync(dataFilePath, JSON.stringify(vinyls, null, 2), "utf8");
 }
 
-export function getVinylById(id: string): Vinyl | undefined {
-  const vinyls = getVinyls();
+export async function getVinylById(id: string): Promise<Vinyl | undefined> {
+  const vinyls = await getVinyls();
   return vinyls.find((v) => v.id === id);
 }
 
-export function addVinyl(vinyl: Omit<Vinyl, "id" | "createdAt" | "updatedAt">): Vinyl {
-  const vinyls = getVinyls();
+export async function addVinyl(
+  vinyl: Omit<Vinyl, "id" | "createdAt" | "updatedAt">
+): Promise<Vinyl> {
+  const vinyls = await getVinyls();
   const newVinyl: Vinyl = {
     ...vinyl,
     id: randomUUID(),
@@ -63,12 +189,15 @@ export function addVinyl(vinyl: Omit<Vinyl, "id" | "createdAt" | "updatedAt">): 
     updatedAt: new Date().toISOString(),
   };
   vinyls.push(newVinyl);
-  saveVinyls(vinyls);
+  await saveVinyls(vinyls);
   return newVinyl;
 }
 
-export function updateVinyl(id: string, updates: Partial<Vinyl>): Vinyl | null {
-  const vinyls = getVinyls();
+export async function updateVinyl(
+  id: string,
+  updates: Partial<Vinyl>
+): Promise<Vinyl | null> {
+  const vinyls = await getVinyls();
   const index = vinyls.findIndex((v) => v.id === id);
   if (index === -1) {
     return null;
@@ -79,18 +208,16 @@ export function updateVinyl(id: string, updates: Partial<Vinyl>): Vinyl | null {
     id, // Ensure ID doesn't change
     updatedAt: new Date().toISOString(),
   };
-  saveVinyls(vinyls);
+  await saveVinyls(vinyls);
   return vinyls[index];
 }
 
-export function deleteVinyl(id: string): boolean {
-  const vinyls = getVinyls();
+export async function deleteVinyl(id: string): Promise<boolean> {
+  const vinyls = await getVinyls();
   const filtered = vinyls.filter((v) => v.id !== id);
   if (filtered.length === vinyls.length) {
     return false;
   }
-  saveVinyls(filtered);
+  await saveVinyls(filtered);
   return true;
 }
-
-
