@@ -11,24 +11,31 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.emailOrUsername || !credentials?.password) {
+        try {
+          if (!credentials?.emailOrUsername || !credentials?.password) {
+            console.error("[NextAuth] Missing credentials");
+            return null;
+          }
+
+          const user = await verifyUser(
+            credentials.emailOrUsername,
+            credentials.password
+          );
+
+          if (!user) {
+            console.error("[NextAuth] User verification failed");
+            return null;
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            username: user.username,
+          };
+        } catch (error) {
+          console.error("[NextAuth] Authorization error:", error);
           return null;
         }
-
-        const user = await verifyUser(
-          credentials.emailOrUsername,
-          credentials.password
-        );
-
-        if (!user) {
-          return null;
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          username: user.username,
-        };
       },
     }),
   ],
@@ -55,6 +62,7 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
+  debug: process.env.NODE_ENV === "development",
 };
 

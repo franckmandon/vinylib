@@ -441,21 +441,26 @@ export async function verifyUser(
   emailOrUsername: string,
   password: string
 ): Promise<User | null> {
-  const users = await getUsers();
-  const user = users.find(
-    (u) => u.email === emailOrUsername || u.username === emailOrUsername
-  );
+  try {
+    const users = await getUsers();
+    const user = users.find(
+      (u) => u.email === emailOrUsername || u.username === emailOrUsername
+    );
 
-  if (!user) {
+    if (!user) {
+      return null;
+    }
+
+    const isValid = await bcrypt.compare(password, user.password);
+    if (!isValid) {
+      return null;
+    }
+
+    return user;
+  } catch (error) {
+    console.error("[verifyUser] Error:", error);
     return null;
   }
-
-  const isValid = await bcrypt.compare(password, user.password);
-  if (!isValid) {
-    return null;
-  }
-
-  return user;
 }
 
 export async function getUserPublic(id: string): Promise<{ id: string; username: string; email: string } | null> {

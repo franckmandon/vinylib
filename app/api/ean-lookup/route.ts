@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getDiscogsToken } from "@/lib/discogs-auth";
 
 export const runtime = "nodejs";
 
@@ -11,6 +12,9 @@ interface EANLookupResult {
   image?: string;
   brand?: string;
   category?: string;
+  genre?: string;
+  label?: string;
+  releaseDate?: string;
 }
 
 export async function GET(request: NextRequest) {
@@ -44,7 +48,7 @@ export async function GET(request: NextRequest) {
       const openEanUrl = `https://opengtindb.org/?ean=${cleanEAN}&cmd=query&queryid=400000000`;
       const response = await fetch(openEanUrl, {
         headers: {
-          "User-Agent": "My Vinylib Vinyl Library Manager/1.0",
+          "User-Agent": "Vinyl Report Vinyl Library Manager/1.0",
         },
       });
 
@@ -111,15 +115,72 @@ export async function GET(request: NextRequest) {
       console.error("Open EAN DB error:", error);
     }
 
-    // If Open EAN DB didn't work, try Barcode Lookup API (requires free API key)
-    // For now, we'll use a fallback approach
-    if (!result) {
-      // Try using MusicBrainz or Discogs API as fallback
-      // These require more complex setup, so we'll return basic info
-      result = {
-        ean: cleanEAN,
-        title: undefined,
-      };
+    // If Open EAN DB didn't work, try Discogs API as fallback
+    if (!result || (!result.title && !result.artist && !result.album)) {
+      try {
+        const { token, hasToken } = getDiscogsToken();
+        
+        if (hasToken) {
+          // Search Discogs by barcode (EAN/UPC)
+          const discogsUrl = `https://api.discogs.com/database/search?barcode=${cleanEAN}&type=release&token=${token}`;
+          const discogsResponse = await fetch(discogsUrl, {
+            headers: {
+              "User-Agent": "Vinyl Report Vinyl Library Manager/1.0",
+            },
+          });
+
+          if (discogsResponse.ok) {
+            const discogsData = await discogsResponse.json();
+            
+            if (discogsData.results && discogsData.results.length > 0) {
+              // Get the first result (most relevant)
+              const release = discogsData.results[0];
+              
+              // Try to get more details from the release
+              let releaseDetails = null;
+              try {
+                const detailsUrl = `https://api.discogs.com/releases/${release.id}?token=${token}`;
+                const detailsResponse = await fetch(detailsUrl, {
+                  headers: {
+                    "User-Agent": "Vinyl Report Vinyl Library Manager/1.0",
+                  },
+                });
+                if (detailsResponse.ok) {
+                  releaseDetails = await detailsResponse.json();
+                }
+              } catch (error) {
+                console.error("Error fetching Discogs release details:", error);
+              }
+
+              // Extract artist and title
+              const artist = release.artist || (releaseDetails?.artists?.[0]?.name) || "";
+              const album = release.title || releaseDetails?.title || "";
+              const image = release.thumb || releaseDetails?.images?.[0]?.uri || releaseDetails?.images?.[0]?.resource_url || "";
+              const description = releaseDetails?.notes || (releaseDetails?.genres?.length ? releaseDetails.genres.join(", ") : "") || "";
+              const genre = (releaseDetails?.genres?.[0]) || (Array.isArray(release.genre) ? release.genre[0] : release.genre) || "";
+              const label = releaseDetails?.labels?.[0]?.name || "";
+              const releaseDate = releaseDetails?.released || (release.year ? release.year.toString() : "") || "";
+
+              // If we have artist and album, use this result
+              if (artist || album) {
+                result = {
+                  ean: cleanEAN,
+                  artist: artist || undefined,
+                  album: album || undefined,
+                  title: album || artist || undefined,
+                  image: image || undefined,
+                  description: description || undefined,
+                  genre: genre || undefined,
+                  label: label || undefined,
+                  releaseDate: releaseDate || undefined,
+                };
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Discogs API error:", error);
+      }
     }
 
     if (!result.title && !result.artist && !result.album) {
