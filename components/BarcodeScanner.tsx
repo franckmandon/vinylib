@@ -16,7 +16,6 @@ export default function BarcodeScanner({
   const [error, setError] = useState<string | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [cameraId, setCameraId] = useState<string | null>(null);
-  const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([]);
 
   useEffect(() => {
     // Wait for DOM to be ready before starting scanner
@@ -93,9 +92,6 @@ export default function BarcodeScanner({
         setError("No cameras found. Please ensure your device has a camera.");
         return;
       }
-
-      // Store available cameras
-      setAvailableCameras(devices);
 
       // Prefer back camera (environment) for barcode scanning
       // On iOS, the back camera is usually labeled with "back" or has "environment" facingMode
