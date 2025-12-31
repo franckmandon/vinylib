@@ -158,7 +158,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Check if we got any results from Discogs
-      if (discogsResponse && discogsResponse.ok && discogsData && discogsData.results && discogsData.results.length > 0) {
+      if (discogsResponse?.ok && discogsData?.results && discogsData.results.length > 0) {
         console.log(`Discogs API found ${discogsData.results.length} result(s) for EAN ${cleanEAN}`);
         
         // Prefer releases, but accept other types if no release is found
@@ -294,20 +294,22 @@ export async function GET(request: NextRequest) {
             hasDate: !!result.releaseDate,
           });
         }
-      } else if (discogsResponse) {
-        // Discogs returned non-OK status or no results
-        if (discogsData) {
-          console.log(`Discogs found no results for EAN ${cleanEAN}. Response:`, JSON.stringify(discogsData).substring(0, 200));
-        }
-      } else if (discogsResponse) {
+      } else if (discogsResponse && !discogsResponse.ok) {
         // Discogs returned non-OK status
-        const errorText = await discogsResponse.text().catch(() => "Unable to read error response");
-        console.error(`Discogs API returned status ${discogsResponse.status} for EAN ${cleanEAN}:`, errorText.substring(0, 500));
-        
-        // If it's a rate limit or similar, we should still try fallback
-        if (discogsResponse.status === 429) {
-          console.log("Discogs rate limit hit, trying fallback");
+        try {
+          const errorText = await discogsResponse.text().catch(() => "Unable to read error response");
+          console.error(`Discogs API returned status ${discogsResponse.status} for EAN ${cleanEAN}:`, errorText.substring(0, 500));
+          
+          // If it's a rate limit or similar, we should still try fallback
+          if (discogsResponse.status === 429) {
+            console.log("Discogs rate limit hit, trying fallback");
+          }
+        } catch (textError) {
+          console.error(`Discogs API error (${discogsResponse.status}) for EAN ${cleanEAN}: Could not read error text`);
         }
+      } else if (discogsResponse && discogsResponse.ok && discogsData && (!discogsData.results || discogsData.results.length === 0)) {
+        // Discogs returned OK but no results
+        console.log(`Discogs found no results for EAN ${cleanEAN}. Response:`, JSON.stringify(discogsData).substring(0, 200));
       } else {
         console.log(`Discogs API did not return a valid response for EAN ${cleanEAN}`);
       }

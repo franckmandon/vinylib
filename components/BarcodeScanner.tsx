@@ -83,19 +83,16 @@ export default function BarcodeScanner({
       const preferredCamera = devices.find((d) => d.label.toLowerCase().includes("back")) || devices[0];
       setCameraId(preferredCamera.id);
 
-      await scanner.start(
-        preferredCamera.id,
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-          // Configuration optimisée pour iOS et codes EAN-13
-          aspectRatio: 1.0,
-          disableFlip: false,
-          // Support des codes-barres EAN-13, EAN-8, UPC-A, UPC-E
-          formatsToSupport: [
-            // html5-qrcode supporte automatiquement les codes-barres EAN/UPC
-          ],
-        },
+              await scanner.start(
+                preferredCamera.id,
+                {
+                  fps: 10,
+                  qrbox: { width: 250, height: 250 },
+                  // Configuration optimisée pour iOS et codes EAN-13
+                  aspectRatio: 1.0,
+                  disableFlip: false,
+                  // html5-qrcode supporte automatiquement les codes-barres EAN/UPC
+                },
         (decodedText) => {
           // Successfully scanned a barcode
           scanner.stop().then(() => {
@@ -225,7 +222,7 @@ export default function BarcodeScanner({
             Positionnez le code-barres dans le cadre. Le scanner détectera automatiquement les codes EAN-13, EAN-8, UPC-A et UPC-E.
           </p>
           <p className="mt-2 text-xs text-slate-500 dark:text-slate-500 text-center">
-            💡 Astuce: Assurez-vous d'avoir un bon éclairage et maintenez le code-barres stable.
+            💡 Astuce: Assurez-vous d&apos;avoir un bon éclairage et maintenez le code-barres stable.
           </p>
           {!window.isSecureContext && window.location.protocol !== 'https:' && window.location.hostname !== 'localhost' && (
             <div className="mt-2 p-2 bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-400 dark:border-yellow-700 rounded text-yellow-700 dark:text-yellow-300 text-xs text-center">

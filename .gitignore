@@ -26,6 +26,8 @@ yarn-error.log*
 
 # local env files
 .env*.local
+.env.production
+.env
 
 # vercel
 .vercel
@@ -36,6 +38,11 @@ next-env.d.ts
 
 # data files (user data, should not be committed)
 /data/vinyls.json
+
+# deployment files
+logs/
+*.log
+.pm2/
 
 # IDE
 .vscode/
