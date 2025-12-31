@@ -18,7 +18,13 @@ export default function BarcodeScanner({
   const [cameraId, setCameraId] = useState<string | null>(null);
 
   useEffect(() => {
+    // Auto-start scanning when component mounts
+    const timer = setTimeout(() => {
+      startScanning();
+    }, 100);
+    
     return () => {
+      clearTimeout(timer);
       if (scannerRef.current) {
         scannerRef.current
           .stop()
@@ -28,6 +34,7 @@ export default function BarcodeScanner({
           .catch(() => {});
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const startScanning = async () => {
@@ -83,18 +90,20 @@ export default function BarcodeScanner({
       const preferredCamera = devices.find((d) => d.label.toLowerCase().includes("back")) || devices[0];
       setCameraId(preferredCamera.id);
 
-              await scanner.start(
-                preferredCamera.id,
-                {
-                  fps: 10,
-                  qrbox: { width: 250, height: 250 },
-                  // Configuration optimisée pour iOS et codes EAN-13
-                  aspectRatio: 1.0,
-                  disableFlip: false,
-                  // html5-qrcode supporte automatiquement les codes-barres EAN/UPC
-                },
+      await scanner.start(
+        preferredCamera.id,
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+          // Configuration optimisée pour iOS et codes EAN-13
+          aspectRatio: 1.0,
+          disableFlip: false,
+          // html5-qrcode détecte automatiquement les codes-barres EAN/UPC
+          // Pas besoin de configuration supplémentaire
+        },
         (decodedText) => {
           // Successfully scanned a barcode
+          console.log("Barcode scanned:", decodedText);
           scanner.stop().then(() => {
             scanner.clear();
             scannerRef.current = null;
@@ -108,10 +117,10 @@ export default function BarcodeScanner({
           });
         },
         (errorMessage) => {
-          // Ignore scanning errors (they're frequent while scanning)
-          // Only log if it's not a "NotFoundException" which is normal
-          if (!errorMessage.includes("NotFoundException")) {
-            console.debug("Scanning error (normal):", errorMessage);
+          // Log all errors for debugging
+          // Ignore "NotFoundException" which is normal while scanning
+          if (!errorMessage.includes("NotFoundException") && !errorMessage.includes("No MultiFormat Readers")) {
+            console.debug("Scanning error:", errorMessage);
           }
         }
       );
