@@ -183,7 +183,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    if (!result.title && !result.artist && !result.album) {
+    if (!result || (!result.title && !result.artist && !result.album)) {
       return NextResponse.json(
         { error: "No product information found for this EAN" },
         { status: 404 }
