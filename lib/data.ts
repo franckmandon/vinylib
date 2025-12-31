@@ -278,13 +278,64 @@ export async function updateVinyl(
   return vinyls[index];
 }
 
-export async function deleteVinyl(id: string): Promise<boolean> {
+export async function deleteVinyl(id: string, userId?: string): Promise<boolean> {
   const vinyls = await getVinyls();
-  const filtered = vinyls.filter((v) => v.id !== id);
-  if (filtered.length === vinyls.length) {
+  const vinylIndex = vinyls.findIndex((v) => v.id === id);
+  
+  if (vinylIndex === -1) {
     return false;
   }
-  await saveVinyls(filtered);
+  
+  const vinyl = vinyls[vinylIndex];
+  
+  // If userId is provided, remove only that user from owners (partial deletion)
+  if (userId) {
+    // Collect all owner IDs (from userId field and owners array)
+    const allOwnerIds = new Set<string>();
+    if (vinyl.userId) {
+      allOwnerIds.add(vinyl.userId);
+    }
+    if (vinyl.owners) {
+      vinyl.owners.forEach(o => allOwnerIds.add(o.userId));
+    }
+    
+    // If there's only one owner total, delete the vinyl completely
+    if (allOwnerIds.size <= 1) {
+      vinyls.splice(vinylIndex, 1);
+      await saveVinyls(vinyls);
+      return true;
+    }
+    
+    // Multiple owners: remove user from owners array if present
+    if (vinyl.owners) {
+      vinyl.owners = vinyl.owners.filter(o => o.userId !== userId);
+    }
+    
+    // If the user being removed is the primary userId, transfer ownership
+    if (vinyl.userId === userId) {
+      if (vinyl.owners && vinyl.owners.length > 0) {
+        // Transfer to first owner in array
+        const newPrimaryOwner = vinyl.owners[0];
+        vinyl.userId = newPrimaryOwner.userId;
+        vinyl.username = newPrimaryOwner.username;
+        // Remove the new primary owner from owners array (since they're now the primary)
+        vinyl.owners = vinyl.owners.filter(o => o.userId !== newPrimaryOwner.userId);
+      } else {
+        // No other owners, delete completely (shouldn't happen due to size check, but safety)
+        vinyls.splice(vinylIndex, 1);
+        await saveVinyls(vinyls);
+        return true;
+      }
+    }
+    
+    vinyl.updatedAt = new Date().toISOString();
+    await saveVinyls(vinyls);
+    return true;
+  }
+  
+  // No userId provided: delete vinyl completely (backward compatibility)
+  vinyls.splice(vinylIndex, 1);
+  await saveVinyls(vinyls);
   return true;
 }
 

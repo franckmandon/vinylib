@@ -184,7 +184,8 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const deleted = await deleteVinyl(id);
+    // Delete vinyl for this user only (remove from owners if multiple owners exist)
+    const deleted = await deleteVinyl(id, session.user.id);
     
     if (!deleted) {
       return NextResponse.json(
