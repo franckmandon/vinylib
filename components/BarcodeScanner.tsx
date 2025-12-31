@@ -128,7 +128,7 @@ export default function BarcodeScanner({
         
         if (frontCamera && devices.length > 1) {
           // Use the other camera (should be back)
-          preferredCamera = devices.find(d => d.deviceId !== frontCamera.deviceId) || devices[0];
+          preferredCamera = devices.find(d => d.id !== frontCamera.id) || devices[0];
         } else {
           // Use the last camera (usually the back one) or first if only one
           preferredCamera = devices.length > 1 ? devices[devices.length - 1] : devices[0];
@@ -136,7 +136,7 @@ export default function BarcodeScanner({
       }
 
       setCameraId(preferredCamera.id);
-      console.log("Available cameras:", devices.map(d => ({ label: d.label, id: d.deviceId })));
+      console.log("Available cameras:", devices.map(d => ({ label: d.label, id: d.id })));
       console.log("Selected camera:", preferredCamera.label, preferredCamera.id);
 
       await scanner.start(
