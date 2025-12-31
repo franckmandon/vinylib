@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Vinyl } from "@/types/vinyl";
 import StarRating from "./StarRating";
 
@@ -38,10 +39,13 @@ export default function VinylCard({ vinyl, onEdit, onDelete, isLoggedIn = false,
     <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md hover:shadow-xl transition-shadow overflow-hidden">
       <div className="aspect-square bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center">
         {vinyl.albumArt ? (
-          <img
+          <Image
             src={vinyl.albumArt}
             alt={`${vinyl.artist} - ${vinyl.album}`}
+            width={400}
+            height={400}
             className="w-full h-full object-cover"
+            unoptimized
           />
         ) : (
           <div className="text-slate-500 dark:text-slate-400 text-center p-4">

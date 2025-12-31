@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { getVinyls, addVinyl, updateVinyl, deleteVinyl, getPublicVinyls, getUserVinyls } from "@/lib/data";
 import { VinylFormData } from "@/types/vinyl";
 
@@ -102,7 +102,28 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const updatedVinyl = await updateVinyl(id, updates, session.user.id);
+    // Verify ownership before updating
+    const allVinyls = await getVinyls();
+    const existingVinyl = allVinyls.find(v => v.id === id);
+    if (!existingVinyl) {
+      return NextResponse.json(
+        { error: "Vinyl not found" },
+        { status: 404 }
+      );
+    }
+    
+    // Check if user owns this vinyl
+    const ownsVinyl = existingVinyl.userId === session.user.id ||
+      existingVinyl.owners?.some(o => o.userId === session.user.id);
+    
+    if (!ownsVinyl) {
+      return NextResponse.json(
+        { error: "Unauthorized: You can only update your own vinyls" },
+        { status: 403 }
+      );
+    }
+
+    const updatedVinyl = await updateVinyl(id, updates);
     
     if (!updatedVinyl) {
       return NextResponse.json(
@@ -142,12 +163,33 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const deleted = await deleteVinyl(id, session.user.id);
-    
-    if (!deleted) {
+    // Verify ownership before deleting
+    const allVinyls = await getVinyls();
+    const existingVinyl = allVinyls.find(v => v.id === id);
+    if (!existingVinyl) {
       return NextResponse.json(
         { error: "Vinyl not found" },
         { status: 404 }
+      );
+    }
+    
+    // Check if user owns this vinyl
+    const ownsVinyl = existingVinyl.userId === session.user.id ||
+      existingVinyl.owners?.some(o => o.userId === session.user.id);
+    
+    if (!ownsVinyl) {
+      return NextResponse.json(
+        { error: "Unauthorized: You can only delete your own vinyls" },
+        { status: 403 }
+      );
+    }
+
+    const deleted = await deleteVinyl(id);
+    
+    if (!deleted) {
+      return NextResponse.json(
+        { error: "Failed to delete vinyl" },
+        { status: 500 }
       );
     }
 

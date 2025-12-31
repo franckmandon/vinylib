@@ -25,7 +25,7 @@ export default function VinylLibrary({ mode = "public" }: VinylLibraryProps) {
   const [sortBy, setSortBy] = useState<"artist" | "album" | "releaseDate" | "rating">("artist");
   const [selectedGenre, setSelectedGenre] = useState("");
   
-  const isLoggedIn = status === "authenticated" && session?.user;
+  const isLoggedIn = !!(status === "authenticated" && session?.user);
   const isPersonalMode = mode === "personal";
 
   const filterAndSortVinyls = useCallback(() => {
@@ -228,7 +228,7 @@ export default function VinylLibrary({ mode = "public" }: VinylLibraryProps) {
           onCancel={handleFormCancel}
           readOnly={
             !isLoggedIn || 
-            (editingVinyl && session?.user?.id && (
+            !!(editingVinyl && session?.user?.id && (
               editingVinyl.userId !== session.user.id && 
               !editingVinyl.owners?.some(o => o.userId === session.user.id)
             ))
