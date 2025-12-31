@@ -16,6 +16,7 @@ export default function BarcodeScanner({
   const [error, setError] = useState<string | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [cameraId, setCameraId] = useState<string | null>(null);
+  const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([]);
 
   useEffect(() => {
     // Wait for DOM to be ready before starting scanner
@@ -93,9 +94,54 @@ export default function BarcodeScanner({
         return;
       }
 
-      // Use the first available camera (or prefer back camera on mobile)
-      const preferredCamera = devices.find((d) => d.label.toLowerCase().includes("back")) || devices[0];
+      // Store available cameras
+      setAvailableCameras(devices);
+
+      // Prefer back camera (environment) for barcode scanning
+      // On iOS, the back camera is usually labeled with "back" or has "environment" facingMode
+      let preferredCamera = devices.find((d) => {
+        const label = d.label.toLowerCase();
+        return label.includes("back") || 
+               label.includes("rear") || 
+               label.includes("environment") ||
+               label.includes("arrière") ||
+               label.includes("derrière");
+      });
+
+      // If no back camera found, try to find by facingMode (if available)
+      if (!preferredCamera) {
+        // Try to get camera with environment facingMode
+        preferredCamera = devices.find((d) => {
+          // Some devices expose facingMode in the device info
+          return (d as any).facingMode === "environment";
+        });
+      }
+
+      // Fallback: use the last camera (usually the back one) or first if only one
+      // On iOS, devices are often ordered: front camera first, then back camera
+      if (!preferredCamera) {
+        // Try to exclude front camera explicitly
+        const frontCamera = devices.find((d) => {
+          const label = d.label.toLowerCase();
+          return label.includes("front") || 
+                 label.includes("face") || 
+                 label.includes("user") ||
+                 label.includes("selfie") ||
+                 label.includes("avant");
+        });
+        
+        if (frontCamera && devices.length > 1) {
+          // Use the other camera (should be back)
+          preferredCamera = devices.find(d => d.deviceId !== frontCamera.deviceId) || devices[0];
+        } else {
+          // Use the last camera (usually the back one) or first if only one
+          preferredCamera = devices.length > 1 ? devices[devices.length - 1] : devices[0];
+        }
+      }
+
       setCameraId(preferredCamera.id);
+      console.log("Available cameras:", devices.map(d => ({ label: d.label, id: d.deviceId })));
+      console.log("Selected camera:", preferredCamera.label, preferredCamera.id);
 
       await scanner.start(
         preferredCamera.id,
