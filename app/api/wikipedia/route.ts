@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       try {
         const searchResponse = await fetch(searchUrl, {
           headers: {
-            "User-Agent": "Vinyl Report Vinyl Library Manager/1.0",
+            "User-Agent": "My Vinylib Vinyl Library Manager/1.0",
           },
         });
 
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
       try {
         const searchResponse = await fetch(searchApiUrl, {
           headers: {
-            "User-Agent": "Vinyl Report Vinyl Library Manager/1.0",
+            "User-Agent": "My Vinylib Vinyl Library Manager/1.0",
           },
         });
 

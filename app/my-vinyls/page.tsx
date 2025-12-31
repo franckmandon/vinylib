@@ -4,7 +4,7 @@ import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import VinylLibrary from "@/components/VinylLibrary";
 
-export default function Home() {
+export default function MyVinylsPage() {
   const { data: session } = useSession();
   
   return (
@@ -19,17 +19,20 @@ export default function Home() {
                 </h1>
               </Link>
               <p className="text-slate-600 dark:text-slate-400">
-                Latest Vinyls from All Collectors
+                My Vinyl Collection
               </p>
             </div>
             {session?.user ? (
               <div className="flex items-center gap-4">
                 <Link
-                  href="/my-vinyls"
-                  className="text-sm font-semibold text-slate-900 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
+                  href="/"
+                  className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
                 >
-                  {session.user.username}
+                  Browse All
                 </Link>
+                <span className="text-sm text-slate-600 dark:text-slate-400">
+                  {session.user.username}
+                </span>
                 <button
                   onClick={() => signOut({ callbackUrl: "/" })}
                   className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 rounded-lg text-sm font-medium transition-colors"
@@ -55,10 +58,9 @@ export default function Home() {
             )}
           </div>
         </header>
-        <VinylLibrary mode="public" />
+        <VinylLibrary mode="personal" />
       </div>
     </main>
   );
 }
-
 

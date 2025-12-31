@@ -19,6 +19,10 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
+        hostname: 'i.discogs.com',
+      },
+      {
+        protocol: 'https',
         hostname: '**',
       },
       {

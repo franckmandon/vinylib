@@ -9,9 +9,10 @@ interface VinylFormProps {
   vinyl?: Vinyl | null;
   onSubmit: () => void;
   onCancel: () => void;
+  readOnly?: boolean; // If true, form is in view-only mode
 }
 
-export default function VinylForm({ vinyl, onSubmit, onCancel }: VinylFormProps) {
+export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false }: VinylFormProps) {
   const [formData, setFormData] = useState<VinylFormData>({
     artist: "",
     album: "",
@@ -195,8 +196,32 @@ export default function VinylForm({ vinyl, onSubmit, onCancel }: VinylFormProps)
         <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6">
-            {vinyl ? "Edit Vinyl" : "Add New Vinyl"}
+            {readOnly ? "Vinyl Details" : vinyl ? "Edit Vinyl" : "Add New Vinyl"}
           </h2>
+          {vinyl && (
+            <div className="mb-4 p-3 bg-slate-100 dark:bg-slate-700 rounded-lg">
+              {vinyl.owners && vinyl.owners.length > 0 ? (
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  {vinyl.owners.length === 1 ? (
+                    <>Owned by <span className="font-semibold text-slate-900 dark:text-slate-100">{vinyl.owners[0].username}</span></>
+                  ) : (
+                    <>
+                      Owned by {vinyl.owners.map((o, idx) => (
+                        <span key={o.userId}>
+                          <span className="font-semibold text-slate-900 dark:text-slate-100">{o.username}</span>
+                          {idx < vinyl.owners!.length - 1 && ", "}
+                        </span>
+                      ))} ({vinyl.owners.length} owners)
+                    </>
+                  )}
+                </p>
+              ) : vinyl.username ? (
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Owned by <span className="font-semibold text-slate-900 dark:text-slate-100">{vinyl.username}</span>
+                </p>
+              ) : null}
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -208,8 +233,10 @@ export default function VinylForm({ vinyl, onSubmit, onCancel }: VinylFormProps)
                   name="artist"
                   value={formData.artist}
                   onChange={handleChange}
-                  required
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required={!readOnly}
+                  disabled={readOnly}
+                  readOnly={readOnly}
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
                 />
               </div>
               <div>
@@ -221,8 +248,10 @@ export default function VinylForm({ vinyl, onSubmit, onCancel }: VinylFormProps)
                   name="album"
                   value={formData.album}
                   onChange={handleChange}
-                  required
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required={!readOnly}
+                  disabled={readOnly}
+                  readOnly={readOnly}
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
                 />
               </div>
               <div>
@@ -235,7 +264,9 @@ export default function VinylForm({ vinyl, onSubmit, onCancel }: VinylFormProps)
                   value={formData.releaseDate || ""}
                   onChange={handleChange}
                   max={new Date().toISOString().split("T")[0]}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={readOnly}
+                  readOnly={readOnly}
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
                 />
               </div>
               <div>
@@ -244,32 +275,34 @@ export default function VinylForm({ vinyl, onSubmit, onCancel }: VinylFormProps)
                     EAN Number
                   </label>
                   <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={handleEANLookup}
-                      disabled={loadingEAN || !formData.ean || formData.ean.trim().length < 8}
-                      className="text-xs px-3 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white rounded transition-colors flex items-center gap-1"
-                    >
-                      <svg
-                        className="w-3 h-3"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+                    {!readOnly && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={handleEANLookup}
+                        disabled={loadingEAN || !formData.ean || formData.ean.trim().length < 8}
+                        className="text-xs px-3 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white rounded transition-colors flex items-center gap-1"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                        />
-                      </svg>
-                      {loadingEAN ? "Recherche..." : "Rechercher"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowScanner(true)}
-                      className="text-xs px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded transition-colors flex items-center gap-1"
-                    >
+                        <svg
+                          className="w-3 h-3"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                          />
+                        </svg>
+                        {loadingEAN ? "Recherche..." : "Rechercher"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowScanner(true)}
+                        className="text-xs px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded transition-colors flex items-center gap-1"
+                      >
                       <svg
                         className="w-3 h-3"
                         fill="none"
@@ -285,6 +318,8 @@ export default function VinylForm({ vinyl, onSubmit, onCancel }: VinylFormProps)
                       </svg>
                       Scanner
                     </button>
+                    </>
+                  )}
                   </div>
                 </div>
                 <input
@@ -293,14 +328,15 @@ export default function VinylForm({ vinyl, onSubmit, onCancel }: VinylFormProps)
                   value={formData.ean}
                   onChange={handleChange}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && formData.ean && formData.ean.trim().length >= 8) {
+                    if (!readOnly && e.key === 'Enter' && formData.ean && formData.ean.trim().length >= 8) {
                       e.preventDefault();
                       handleEANLookup();
                     }
                   }}
                   placeholder="EAN-13 or UPC (then click Rechercher)"
-                  disabled={loadingEAN}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                  disabled={loadingEAN || readOnly}
+                  readOnly={readOnly}
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
                 />
                 {loadingEAN && (
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
@@ -317,7 +353,9 @@ export default function VinylForm({ vinyl, onSubmit, onCancel }: VinylFormProps)
                   name="genre"
                   value={formData.genre}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={readOnly}
+                  readOnly={readOnly}
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
                 />
               </div>
               <div>
@@ -329,7 +367,9 @@ export default function VinylForm({ vinyl, onSubmit, onCancel }: VinylFormProps)
                   name="label"
                   value={formData.label}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={readOnly}
+                  readOnly={readOnly}
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
                 />
               </div>
               <div>
@@ -340,7 +380,8 @@ export default function VinylForm({ vinyl, onSubmit, onCancel }: VinylFormProps)
                   name="condition"
                   value={formData.condition}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={readOnly}
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <option value="">Select condition</option>
                   <option value="Mint">Mint</option>
@@ -362,7 +403,9 @@ export default function VinylForm({ vinyl, onSubmit, onCancel }: VinylFormProps)
                 value={formData.albumArt}
                 onChange={handleChange}
                 placeholder="https://example.com/album-cover.jpg"
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={readOnly}
+                readOnly={readOnly}
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
               />
             </div>
             <div>
@@ -371,8 +414,9 @@ export default function VinylForm({ vinyl, onSubmit, onCancel }: VinylFormProps)
               </label>
               <StarRating
                 rating={formData.rating || 0}
-                onRatingChange={handleRatingChange}
+                onRatingChange={readOnly ? undefined : handleRatingChange}
                 size="lg"
+                readonly={readOnly}
               />
             </div>
             <div>
@@ -385,7 +429,9 @@ export default function VinylForm({ vinyl, onSubmit, onCancel }: VinylFormProps)
                 value={formData.youtubeLink}
                 onChange={handleChange}
                 placeholder="https://www.youtube.com/watch?v=..."
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={readOnly}
+                readOnly={readOnly}
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
               />
             </div>
             <div>
@@ -393,38 +439,44 @@ export default function VinylForm({ vinyl, onSubmit, onCancel }: VinylFormProps)
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
                   Notes
                 </label>
-                <button
-                  type="button"
-                  onClick={fetchWikipediaContent}
-                  disabled={loadingWikipedia || !formData.artist || !formData.album}
-                  className="text-xs px-3 py-1 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-200 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loadingWikipedia ? "Loading..." : "Fetch from Wikipedia"}
-                </button>
+                {!readOnly && (
+                  <button
+                    type="button"
+                    onClick={fetchWikipediaContent}
+                    disabled={loadingWikipedia || !formData.artist || !formData.album}
+                    className="text-xs px-3 py-1 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-200 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loadingWikipedia ? "Loading..." : "Fetch from Wikipedia"}
+                  </button>
+                )}
               </div>
               <textarea
                 name="notes"
                 value={formData.notes}
                 onChange={handleChange}
                 rows={4}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={readOnly}
+                readOnly={readOnly}
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
                 placeholder="Add notes or fetch from Wikipedia..."
               />
             </div>
             <div className="flex gap-3 pt-4">
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg font-medium transition-colors"
-              >
-                {loading ? "Saving..." : vinyl ? "Update" : "Add Vinyl"}
-              </button>
+              {!readOnly && (
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg font-medium transition-colors"
+                >
+                  {loading ? "Saving..." : vinyl ? "Update" : "Add Vinyl"}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={onCancel}
-                className="flex-1 px-4 py-2 bg-slate-300 dark:bg-slate-600 hover:bg-slate-400 dark:hover:bg-slate-500 text-slate-900 dark:text-slate-100 rounded-lg font-medium transition-colors"
+                className={`${readOnly ? 'w-full' : 'flex-1'} px-4 py-2 bg-slate-300 dark:bg-slate-600 hover:bg-slate-400 dark:hover:bg-slate-500 text-slate-900 dark:text-slate-100 rounded-lg font-medium transition-colors`}
               >
-                Cancel
+                {readOnly ? "Close" : "Cancel"}
               </button>
             </div>
           </form>

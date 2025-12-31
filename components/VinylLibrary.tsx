@@ -1,12 +1,21 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { Vinyl } from "@/types/vinyl";
 import VinylCard from "./VinylCard";
 import VinylForm from "./VinylForm";
 import SearchBar from "./SearchBar";
+import Link from "next/link";
 
-export default function VinylLibrary() {
+interface VinylLibraryProps {
+  mode?: "public" | "personal"; // "public" shows all vinyls, "personal" shows user's vinyls
+}
+
+export default function VinylLibrary({ mode = "public" }: VinylLibraryProps) {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [vinyls, setVinyls] = useState<Vinyl[]>([]);
   const [filteredVinyls, setFilteredVinyls] = useState<Vinyl[]>([]);
   const [loading, setLoading] = useState(true);
@@ -15,6 +24,9 @@ export default function VinylLibrary() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"artist" | "album" | "releaseDate" | "rating">("artist");
   const [selectedGenre, setSelectedGenre] = useState("");
+  
+  const isLoggedIn = status === "authenticated" && session?.user;
+  const isPersonalMode = mode === "personal";
 
   const filterAndSortVinyls = useCallback(() => {
     let filtered = [...vinyls];
@@ -60,7 +72,16 @@ export default function VinylLibrary() {
 
   useEffect(() => {
     fetchVinyls();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, isPersonalMode]);
+
+  // Reload vinyls when session changes (user logs in/out)
+  useEffect(() => {
+    if (status !== "loading") {
+      fetchVinyls();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
 
   useEffect(() => {
     filterAndSortVinyls();
@@ -78,7 +99,18 @@ export default function VinylLibrary() {
 
   const fetchVinyls = async () => {
     try {
-      const response = await fetch("/api/vinyls");
+      // If personal mode and not logged in, redirect to login
+      if (isPersonalMode && !isLoggedIn) {
+        router.push("/login");
+        return;
+      }
+      
+      // Build URL with mode parameter
+      const url = isPersonalMode ? "/api/vinyls?mode=personal" : "/api/vinyls?mode=public";
+      
+      const response = await fetch(url, {
+        cache: "no-store", // Ensure fresh data on each request
+      });
       if (response.ok) {
         const data = await response.json();
         setVinyls(data);
@@ -91,16 +123,44 @@ export default function VinylLibrary() {
   };
 
   const handleAddVinyl = () => {
+    if (!isLoggedIn) {
+      router.push("/login");
+      return;
+    }
     setEditingVinyl(null);
     setShowForm(true);
   };
 
   const handleEditVinyl = (vinyl: Vinyl) => {
+    if (!isLoggedIn) {
+      // Show details instead of editing
+      handleViewDetails(vinyl);
+      return;
+    }
+    // Check if user owns this vinyl (check both userId and owners array)
+    const ownsVinyl = session?.user?.id && (
+      vinyl.userId === session.user.id || 
+      vinyl.owners?.some(o => o.userId === session.user.id)
+    );
+    if (!ownsVinyl) {
+      // User doesn't own this vinyl, show details instead
+      handleViewDetails(vinyl);
+      return;
+    }
+    setEditingVinyl(vinyl);
+    setShowForm(true);
+  };
+  
+  const handleViewDetails = (vinyl: Vinyl) => {
     setEditingVinyl(vinyl);
     setShowForm(true);
   };
 
   const handleDeleteVinyl = async (id: string) => {
+    if (!isLoggedIn) {
+      return;
+    }
+    
     if (!confirm("Are you sure you want to delete this vinyl?")) {
       return;
     }
@@ -112,6 +172,9 @@ export default function VinylLibrary() {
 
       if (response.ok) {
         setVinyls(vinyls.filter((v) => v.id !== id));
+      } else {
+        const error = await response.json();
+        alert(error.error || "Failed to delete vinyl");
       }
     } catch (error) {
       console.error("Error deleting vinyl:", error);
@@ -163,6 +226,13 @@ export default function VinylLibrary() {
           vinyl={editingVinyl}
           onSubmit={handleFormSubmit}
           onCancel={handleFormCancel}
+          readOnly={
+            !isLoggedIn || 
+            (editingVinyl && session?.user?.id && (
+              editingVinyl.userId !== session.user.id && 
+              !editingVinyl.owners?.some(o => o.userId === session.user.id)
+            ))
+          }
         />
       )}
 
@@ -174,14 +244,23 @@ export default function VinylLibrary() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredVinyls.map((vinyl) => (
-            <VinylCard
-              key={vinyl.id}
-              vinyl={vinyl}
-              onEdit={handleEditVinyl}
-              onDelete={handleDeleteVinyl}
-            />
-          ))}
+          {filteredVinyls.map((vinyl) => {
+            const ownsVinyl = isLoggedIn && session?.user?.id && (
+              vinyl.userId === session.user.id || 
+              vinyl.owners?.some(o => o.userId === session.user.id)
+            );
+            return (
+              <VinylCard
+                key={vinyl.id}
+                vinyl={vinyl}
+                onEdit={isLoggedIn ? handleEditVinyl : handleViewDetails}
+                onDelete={ownsVinyl ? handleDeleteVinyl : undefined}
+                isLoggedIn={isLoggedIn}
+                isOwner={!!ownsVinyl}
+                showOwners={!isPersonalMode} // Show owners on public page
+              />
+            );
+          })}
         </div>
       )}
 

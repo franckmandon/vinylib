@@ -11,6 +11,9 @@ export interface Vinyl {
   ean?: string;
   rating?: number; // 1-5 stars
   youtubeLink?: string;
+  userId: string; // ID of the primary user who owns this vinyl (for backward compatibility)
+  username?: string; // Username of the primary user (for display on public pages)
+  owners?: Array<{ userId: string; username: string; addedAt: string }>; // All users who own this vinyl
   createdAt: string;
   updatedAt: string;
 }

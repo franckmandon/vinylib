@@ -1,16 +1,18 @@
 "use client";
 
-import Image from "next/image";
 import { Vinyl } from "@/types/vinyl";
 import StarRating from "./StarRating";
 
 interface VinylCardProps {
   vinyl: Vinyl;
   onEdit: (vinyl: Vinyl) => void;
-  onDelete: (id: string) => void;
+  onDelete?: (id: string) => void;
+  isLoggedIn?: boolean;
+  isOwner?: boolean;
+  showOwners?: boolean;
 }
 
-export default function VinylCard({ vinyl, onEdit, onDelete }: VinylCardProps) {
+export default function VinylCard({ vinyl, onEdit, onDelete, isLoggedIn = false, isOwner = false, showOwners = false }: VinylCardProps) {
   const formatDate = (dateString?: string) => {
     if (!dateString) return null;
     try {
@@ -34,14 +36,12 @@ export default function VinylCard({ vinyl, onEdit, onDelete }: VinylCardProps) {
   const videoId = getYouTubeVideoId(vinyl.youtubeLink);
   return (
     <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md hover:shadow-xl transition-shadow overflow-hidden">
-      <div className="aspect-square bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center relative">
+      <div className="aspect-square bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center">
         {vinyl.albumArt ? (
-          <Image
+          <img
             src={vinyl.albumArt}
             alt={`${vinyl.artist} - ${vinyl.album}`}
-            fill
-            className="object-cover"
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            className="w-full h-full object-cover"
           />
         ) : (
           <div className="text-slate-500 dark:text-slate-400 text-center p-4">
@@ -101,6 +101,24 @@ export default function VinylCard({ vinyl, onEdit, onDelete }: VinylCardProps) {
             EAN: {vinyl.ean}
           </p>
         )}
+        {(vinyl.owners && vinyl.owners.length > 0) ? (
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
+            {vinyl.owners.length === 1 ? (
+              <>Owned by <span className="font-semibold text-slate-700 dark:text-slate-300">{vinyl.owners[0].username}</span></>
+            ) : (
+              <>Owned by {vinyl.owners.map((o, idx) => (
+                <span key={o.userId}>
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">{o.username}</span>
+                  {idx < vinyl.owners!.length - 1 && ", "}
+                </span>
+              ))}</>
+            )}
+          </p>
+        ) : vinyl.username ? (
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
+            Owned by <span className="font-semibold text-slate-700 dark:text-slate-300">{vinyl.username}</span>
+          </p>
+        ) : null}
         {videoId && (
           <div className="mb-3">
             <a
@@ -123,16 +141,18 @@ export default function VinylCard({ vinyl, onEdit, onDelete }: VinylCardProps) {
         <div className="flex gap-2">
           <button
             onClick={() => onEdit(vinyl)}
-            className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition-colors"
+            className={`flex-1 px-3 py-2 ${isLoggedIn && isOwner ? 'bg-blue-600 hover:bg-blue-700' : 'bg-slate-600 hover:bg-slate-700'} text-white text-sm rounded transition-colors`}
           >
-            Edit
+            {isLoggedIn && isOwner ? "Edit" : "Détails"}
           </button>
-          <button
-            onClick={() => onDelete(vinyl.id)}
-            className="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors"
-          >
-            Delete
-          </button>
+          {isLoggedIn && isOwner && onDelete && (
+            <button
+              onClick={() => onDelete(vinyl.id)}
+              className="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors"
+            >
+              Delete
+            </button>
+          )}
         </div>
       </div>
     </div>
