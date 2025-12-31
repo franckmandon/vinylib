@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Vinyl } from "@/types/vinyl";
 import StarRating from "./StarRating";
 
@@ -33,12 +34,14 @@ export default function VinylCard({ vinyl, onEdit, onDelete }: VinylCardProps) {
   const videoId = getYouTubeVideoId(vinyl.youtubeLink);
   return (
     <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md hover:shadow-xl transition-shadow overflow-hidden">
-      <div className="aspect-square bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center">
+      <div className="aspect-square bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center relative">
         {vinyl.albumArt ? (
-          <img
+          <Image
             src={vinyl.albumArt}
             alt={`${vinyl.artist} - ${vinyl.album}`}
-            className="w-full h-full object-cover"
+            fill
+            className="object-cover"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
           />
         ) : (
           <div className="text-slate-500 dark:text-slate-400 text-center p-4">

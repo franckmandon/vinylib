@@ -1,16 +1,17 @@
 import { Vinyl } from "@/types/vinyl";
 import { randomUUID } from "crypto";
-import { createClient, RedisClientType } from "redis";
+import { createClient } from "redis";
 
 const VINYLS_KEY = "vinyls:collection";
 
 // Initialize Redis client (singleton pattern for serverless)
-let redisClient: RedisClientType | null = null;
+let redisClient: ReturnType<typeof createClient> | null = null;
 let isConnecting = false;
 
-async function getRedisClient(): Promise<RedisClientType | null> {
-  // Return existing connected client
-  if (redisClient?.isOpen) {
+async function getRedisClient(): Promise<ReturnType<typeof createClient> | null> {
+  // In serverless environments, connections may be reused but we should reconnect if needed
+  // Return existing client if available and connected
+  if (redisClient) {
     return redisClient;
   }
 
@@ -36,7 +37,7 @@ async function getRedisClient(): Promise<RedisClientType | null> {
     isConnecting = true;
     redisClient = createClient({
       url: redisUrl,
-    }) as RedisClientType;
+    });
 
     // Handle connection errors
     redisClient.on("error", (err) => {
@@ -65,8 +66,9 @@ let dataFilePath: string | null = null;
 if (process.env.NODE_ENV !== "production" && typeof window === "undefined") {
   try {
     fs = require("fs");
-    path = require("path");
-    dataFilePath = path.join(process.cwd(), "data", "vinyls.json");
+    const pathModule = require("path");
+    path = pathModule;
+    dataFilePath = pathModule.join(process.cwd(), "data", "vinyls.json");
     useFileSystem = true;
   } catch {
     // File system not available

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Vinyl } from "@/types/vinyl";
 import VinylCard from "./VinylCard";
 import VinylForm from "./VinylForm";
@@ -22,7 +22,7 @@ export default function VinylLibrary() {
 
   useEffect(() => {
     filterAndSortVinyls();
-  }, [vinyls, searchQuery, sortBy, selectedGenre]);
+  }, [filterAndSortVinyls]);
 
   const getAvailableGenres = (): string[] => {
     const genres = new Set<string>();
@@ -48,7 +48,7 @@ export default function VinylLibrary() {
     }
   };
 
-  const filterAndSortVinyls = () => {
+  const filterAndSortVinyls = useCallback(() => {
     let filtered = [...vinyls];
 
     // Filter by genre
@@ -88,7 +88,7 @@ export default function VinylLibrary() {
     });
 
     setFilteredVinyls(filtered);
-  };
+  }, [vinyls, searchQuery, sortBy, selectedGenre]);
 
   const handleAddVinyl = () => {
     setEditingVinyl(null);
