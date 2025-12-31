@@ -18,10 +18,17 @@ export default function BarcodeScanner({
   const [cameraId, setCameraId] = useState<string | null>(null);
 
   useEffect(() => {
-    // Auto-start scanning when component mounts
+    // Wait for DOM to be ready before starting scanner
     const timer = setTimeout(() => {
-      startScanning();
-    }, 100);
+      // Double check that element exists
+      const element = document.getElementById("barcode-scanner");
+      if (element) {
+        startScanning();
+      } else {
+        console.error("Barcode scanner element not found in DOM");
+        setError("Erreur: élément scanner introuvable. Veuillez réessayer.");
+      }
+    }, 300); // Increased delay to ensure DOM is ready
     
     return () => {
       clearTimeout(timer);
@@ -94,12 +101,21 @@ export default function BarcodeScanner({
         preferredCamera.id,
         {
           fps: 10,
-          qrbox: { width: 250, height: 250 },
+          qrbox: function(viewfinderWidth, viewfinderHeight) {
+            // Rectangle horizontal pour codes-barres (plus large que haut)
+            const minEdgePercentage = 0.7; // 70% de la largeur
+            const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+            const qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
+            const width = qrboxSize;
+            const height = Math.floor(qrboxSize * 0.6); // Ratio 5:3 pour codes-barres
+            return {
+              width: width,
+              height: height
+            };
+          },
           // Configuration optimisée pour iOS et codes EAN-13
-          aspectRatio: 1.0,
+          aspectRatio: 1.777778, // 16:9 pour mieux voir les codes-barres horizontaux
           disableFlip: false,
-          // html5-qrcode détecte automatiquement les codes-barres EAN/UPC
-          // Pas besoin de configuration supplémentaire
         },
         (decodedText) => {
           // Successfully scanned a barcode
@@ -162,7 +178,7 @@ export default function BarcodeScanner({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center p-4 z-[100]">
       <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-md w-full">
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
@@ -189,12 +205,22 @@ export default function BarcodeScanner({
             </button>
           </div>
 
-          <div className="mb-4">
+          <div className="mb-4 relative">
             <div
               id="barcode-scanner"
               className="w-full rounded-lg overflow-hidden bg-slate-900"
-              style={{ minHeight: "300px" }}
+              style={{ minHeight: "300px", width: "100%" }}
             />
+            {scanning && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="border-2 border-blue-500 rounded-lg" style={{ width: "250px", height: "250px" }}>
+                  <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-blue-500"></div>
+                  <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-blue-500"></div>
+                  <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-blue-500"></div>
+                  <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-blue-500"></div>
+                </div>
+              </div>
+            )}
           </div>
 
           {error && (
