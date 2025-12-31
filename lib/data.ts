@@ -526,6 +526,39 @@ export async function getUserPublic(id: string): Promise<{ id: string; username:
   };
 }
 
+export async function deleteUser(userId: string): Promise<boolean> {
+  try {
+    // Get user's vinyls
+    const userVinyls = await getUserVinyls(userId);
+    
+    // Remove user from all vinyls (or delete vinyls if user is the only owner)
+    for (const vinyl of userVinyls) {
+      await deleteVinyl(vinyl.id, userId);
+    }
+    
+    // Remove user from users list
+    const users = await getUsers();
+    const filteredUsers = users.filter(u => u.id !== userId);
+    
+    if (filteredUsers.length === users.length) {
+      // User not found
+      return false;
+    }
+    
+    await saveUsers(filteredUsers);
+    
+    // Remove user's reset tokens
+    const tokens = await getResetTokens();
+    const filteredTokens = tokens.filter(t => t.userId !== userId);
+    await saveResetTokens(filteredTokens);
+    
+    return true;
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    return false;
+  }
+}
+
 // Password reset functions
 const RESET_TOKENS_KEY = "reset_tokens:collection";
 

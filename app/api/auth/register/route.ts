@@ -42,8 +42,10 @@ export async function POST(request: NextRequest) {
     const user = await createUser(email, username, password);
     
     // Send welcome email (don't wait for it to complete)
-    sendWelcomeEmail(user.email, user.username).catch((error) => {
-      console.error("Failed to send welcome email:", error);
+    sendWelcomeEmail(user.email, user.username).catch((error: any) => {
+      console.error("[register] Failed to send welcome email:", error);
+      console.error("[register] Error message:", error?.message);
+      console.error("[register] Error details:", JSON.stringify(error, null, 2));
       // Don't fail registration if email fails
     });
     

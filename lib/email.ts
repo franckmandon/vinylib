@@ -1,21 +1,30 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Initialize Resend with API key
+const getResendClient = () => {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    throw new Error("RESEND_API_KEY is not configured");
+  }
+  return new Resend(apiKey);
+};
 
 export async function sendWelcomeEmail(email: string, username: string) {
   if (!process.env.RESEND_API_KEY) {
-    console.warn("[email] RESEND_API_KEY not configured, skipping email send");
+    console.error("[email] RESEND_API_KEY not configured");
     throw new Error("RESEND_API_KEY is not configured");
   }
 
   // Use verified domain or fallback to Resend's test domain
-  // If you haven't verified vinyl.report domain, use: "onboarding@resend.dev"
-  const fromEmail = process.env.RESEND_FROM_EMAIL || "Vinyl Report <onboarding@resend.dev>";
+  // Format: "Name <email@domain.com>" or just "email@domain.com"
+  const fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
   
   console.log("[email] Sending welcome email to:", email);
   console.log("[email] From email:", fromEmail);
+  console.log("[email] RESEND_API_KEY configured:", !!process.env.RESEND_API_KEY);
 
   try {
+    const resend = getResendClient();
     const result = await resend.emails.send({
       from: fromEmail,
       to: email,
@@ -66,29 +75,36 @@ export async function sendWelcomeEmail(email: string, username: string) {
     return result;
   } catch (error: any) {
     console.error("[email] Error sending welcome email:", error);
+    console.error("[email] Error type:", typeof error);
     console.error("[email] Error details:", JSON.stringify(error, null, 2));
     if (error?.message) {
       console.error("[email] Error message:", error.message);
     }
-    // Don't throw - email failure shouldn't block registration
+    if (error?.response) {
+      console.error("[email] Error response:", JSON.stringify(error.response, null, 2));
+    }
+    // Re-throw to let the caller handle it
     throw error;
   }
 }
 
 export async function sendPasswordResetEmail(email: string, username: string, resetUrl: string) {
   if (!process.env.RESEND_API_KEY) {
-    console.warn("[email] RESEND_API_KEY not configured, skipping email send");
+    console.error("[email] RESEND_API_KEY not configured");
     throw new Error("RESEND_API_KEY is not configured");
   }
 
   // Use verified domain or fallback to Resend's test domain
-  // If you haven't verified vinyl.report domain, use: "onboarding@resend.dev"
-  const fromEmail = process.env.RESEND_FROM_EMAIL || "Vinyl Report <onboarding@resend.dev>";
+  // Format: "Name <email@domain.com>" or just "email@domain.com"
+  const fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
   
   console.log("[email] Sending password reset email to:", email);
   console.log("[email] From email:", fromEmail);
+  console.log("[email] RESEND_API_KEY configured:", !!process.env.RESEND_API_KEY);
+  console.log("[email] Reset URL:", resetUrl);
 
   try {
+    const resend = getResendClient();
     const result = await resend.emails.send({
       from: fromEmail,
       to: email,
@@ -139,10 +155,15 @@ export async function sendPasswordResetEmail(email: string, username: string, re
     return result;
   } catch (error: any) {
     console.error("[email] Error sending password reset email:", error);
+    console.error("[email] Error type:", typeof error);
     console.error("[email] Error details:", JSON.stringify(error, null, 2));
     if (error?.message) {
       console.error("[email] Error message:", error.message);
     }
+    if (error?.response) {
+      console.error("[email] Error response:", JSON.stringify(error.response, null, 2));
+    }
+    // Re-throw to let the caller handle it
     throw error;
   }
 }

@@ -3,6 +3,7 @@
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import VinylLibrary from "@/components/VinylLibrary";
+import UserMenu from "@/components/UserMenu";
 
 export default function Home() {
   const { data: session } = useSession();
@@ -24,12 +25,7 @@ export default function Home() {
             </div>
             {session?.user ? (
               <div className="flex items-center gap-4">
-                <Link
-                  href="/my-vinyls"
-                  className="text-sm font-semibold text-slate-900 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
-                >
-                  {session.user.username}
-                </Link>
+                <UserMenu />
                 <button
                   onClick={() => signOut({ callbackUrl: "/" })}
                   className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 rounded-lg text-sm font-medium transition-colors"

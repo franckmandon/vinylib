@@ -3,6 +3,7 @@
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import VinylLibrary from "@/components/VinylLibrary";
+import UserMenu from "@/components/UserMenu";
 
 export default function MyVinylsPage() {
   const { data: session } = useSession();
@@ -30,9 +31,7 @@ export default function MyVinylsPage() {
                 >
                   Browse All
                 </Link>
-                <span className="text-sm text-slate-600 dark:text-slate-400">
-                  {session.user.username}
-                </span>
+                <UserMenu />
                 <button
                   onClick={() => signOut({ callbackUrl: "/" })}
                   className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 rounded-lg text-sm font-medium transition-colors"
