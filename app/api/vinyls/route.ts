@@ -5,6 +5,7 @@ import { getVinyls, addVinyl, updateVinyl, deleteVinyl, getPublicVinyls, getUser
 import { VinylFormData } from "@/types/vinyl";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {

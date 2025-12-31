@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Vinyl } from "@/types/vinyl";
 import VinylCard from "./VinylCard";
 import VinylForm from "./VinylForm";
@@ -21,15 +21,36 @@ export default function VinylLibrary({ mode = "public" }: VinylLibraryProps) {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingVinyl, setEditingVinyl] = useState<Vinyl | null>(null);
+  const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"artist" | "album" | "releaseDate" | "rating">("artist");
   const [selectedGenre, setSelectedGenre] = useState("");
+  const [filterByOwner, setFilterByOwner] = useState<{ username: string; userId: string } | null>(null);
   
   const isLoggedIn = !!(status === "authenticated" && session?.user);
   const isPersonalMode = mode === "personal";
 
+  // Read owner filter from URL params
+  useEffect(() => {
+    const ownerUsername = searchParams.get("owner");
+    const ownerUserId = searchParams.get("ownerId");
+    if (ownerUsername && ownerUserId) {
+      setFilterByOwner({ username: ownerUsername, userId: ownerUserId });
+    } else {
+      setFilterByOwner(null);
+    }
+  }, [searchParams]);
+
   const filterAndSortVinyls = useCallback(() => {
     let filtered = [...vinyls];
+
+    // Filter by owner
+    if (filterByOwner) {
+      filtered = filtered.filter((vinyl) => {
+        return vinyl.userId === filterByOwner.userId ||
+          vinyl.owners?.some(o => o.userId === filterByOwner.userId);
+      });
+    }
 
     // Filter by genre
     if (selectedGenre) {
@@ -68,7 +89,7 @@ export default function VinylLibrary({ mode = "public" }: VinylLibraryProps) {
     });
 
     setFilteredVinyls(filtered);
-  }, [vinyls, searchQuery, sortBy, selectedGenre]);
+  }, [vinyls, searchQuery, sortBy, selectedGenre, filterByOwner]);
 
   useEffect(() => {
     fetchVinyls();
@@ -203,6 +224,25 @@ export default function VinylLibrary({ mode = "public" }: VinylLibraryProps) {
 
   return (
     <div>
+      {filterByOwner && (
+        <div className="mb-4 flex items-center gap-2">
+          <span className="text-sm text-slate-600 dark:text-slate-400">
+            Showing vinyls from:
+          </span>
+          <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            {filterByOwner.username}
+          </span>
+          <button
+            onClick={() => {
+              setFilterByOwner(null);
+              router.push("/");
+            }}
+            className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            Clear filter
+          </button>
+        </div>
+      )}
       <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
         <SearchBar
           searchQuery={searchQuery}
@@ -213,12 +253,14 @@ export default function VinylLibrary({ mode = "public" }: VinylLibraryProps) {
           onGenreChange={setSelectedGenre}
           availableGenres={getAvailableGenres()}
         />
-        <button
-          onClick={handleAddVinyl}
-          className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-md hover:shadow-lg whitespace-nowrap"
-        >
-          + Add Vinyl
-        </button>
+        {!filterByOwner && (
+          <button
+            onClick={handleAddVinyl}
+            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-md hover:shadow-lg whitespace-nowrap"
+          >
+            + Add Vinyl
+          </button>
+        )}
       </div>
 
       {showForm && (
@@ -258,6 +300,9 @@ export default function VinylLibrary({ mode = "public" }: VinylLibraryProps) {
                 isLoggedIn={isLoggedIn}
                 isOwner={!!ownsVinyl}
                 showOwners={!isPersonalMode} // Show owners on public page
+                onOwnerClick={(username, userId) => {
+                  router.push(`/?owner=${encodeURIComponent(username)}&ownerId=${encodeURIComponent(userId)}`);
+                }}
               />
             );
           })}

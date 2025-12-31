@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { deleteUser } from "@/lib/data";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function DELETE(request: NextRequest) {
   try {

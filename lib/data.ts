@@ -1,11 +1,13 @@
 import { Vinyl } from "@/types/vinyl";
 import { User } from "@/types/user";
+import { Bookmark, BookmarkWithVinyl } from "@/types/bookmark";
 import { randomUUID } from "crypto";
 import { createClient } from "redis";
 import bcrypt from "bcryptjs";
 
 const VINYLS_KEY = "vinyls:collection";
 const USERS_KEY = "users:collection";
+const BOOKMARKS_KEY = "bookmarks:collection";
 
 // Initialize Redis client (singleton pattern for serverless)
 let redisClient: ReturnType<typeof createClient> | null = null;
@@ -802,4 +804,120 @@ export async function getPublicVinyls(limit: number = 50): Promise<Vinyl[]> {
   }
   
   return sorted;
+}
+
+// Bookmark management functions
+async function getBookmarks(): Promise<Bookmark[]> {
+  const client = await getRedisClient();
+  if (client) {
+    try {
+      const data = await client.get(BOOKMARKS_KEY);
+      if (!data) {
+        return [];
+      }
+      return JSON.parse(data);
+    } catch (error) {
+      console.error("Error reading bookmarks from Redis:", error);
+      return [];
+    }
+  }
+
+  // Fallback to file system for local development
+  if (useFileSystem && fs && path) {
+    const bookmarksFilePath = path.join(getDataDir(), "bookmarks.json");
+    if (!fs.existsSync(bookmarksFilePath)) {
+      return [];
+    }
+    try {
+      const fileData = fs.readFileSync(bookmarksFilePath, "utf8");
+      return JSON.parse(fileData);
+    } catch (error) {
+      console.error("Error reading bookmarks data:", error);
+      return [];
+    }
+  }
+
+  return [];
+}
+
+async function saveBookmarks(bookmarks: Bookmark[]): Promise<void> {
+  const client = await getRedisClient();
+  if (client) {
+    try {
+      await client.set(BOOKMARKS_KEY, JSON.stringify(bookmarks));
+    } catch (error) {
+      console.error("Error saving bookmarks to Redis:", error);
+      throw error;
+    }
+    return;
+  }
+
+  // Fallback to file system for local development
+  if (useFileSystem && fs && path) {
+    const bookmarksFilePath = path.join(getDataDir(), "bookmarks.json");
+    fs.writeFileSync(bookmarksFilePath, JSON.stringify(bookmarks, null, 2), "utf8");
+  }
+}
+
+export async function getUserBookmarks(userId: string): Promise<BookmarkWithVinyl[]> {
+  const bookmarks = await getBookmarks();
+  const userBookmarks = bookmarks.filter(b => b.userId === userId);
+  
+  // Populate vinyl data for each bookmark
+  const vinyls = await getVinyls();
+  return userBookmarks
+    .map(bookmark => {
+      const vinyl = vinyls.find(v => v.id === bookmark.vinylId);
+      if (!vinyl) return null;
+      return {
+        ...bookmark,
+        vinyl,
+      };
+    })
+    .filter((b): b is BookmarkWithVinyl => b !== null)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
+export async function isBookmarked(userId: string, vinylId: string): Promise<boolean> {
+  const bookmarks = await getBookmarks();
+  return bookmarks.some(b => b.userId === userId && b.vinylId === vinylId);
+}
+
+export async function addBookmark(userId: string, vinylId: string): Promise<Bookmark> {
+  const bookmarks = await getBookmarks();
+  
+  // Check if already bookmarked
+  const existing = bookmarks.find(b => b.userId === userId && b.vinylId === vinylId);
+  if (existing) {
+    return existing;
+  }
+  
+  // Verify vinyl exists
+  const vinyl = await getVinylById(vinylId);
+  if (!vinyl) {
+    throw new Error("Vinyl not found");
+  }
+  
+  const newBookmark: Bookmark = {
+    id: randomUUID(),
+    userId,
+    vinylId,
+    createdAt: new Date().toISOString(),
+  };
+  
+  bookmarks.push(newBookmark);
+  await saveBookmarks(bookmarks);
+  return newBookmark;
+}
+
+export async function deleteBookmark(userId: string, vinylId: string): Promise<boolean> {
+  const bookmarks = await getBookmarks();
+  const filtered = bookmarks.filter(b => !(b.userId === userId && b.vinylId === vinylId));
+  
+  if (filtered.length === bookmarks.length) {
+    return false; // Bookmark not found
+  }
+  
+  await saveBookmarks(filtered);
+  return true;
 }

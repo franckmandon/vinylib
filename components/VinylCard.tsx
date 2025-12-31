@@ -1,5 +1,8 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Vinyl } from "@/types/vinyl";
 import StarRating from "./StarRating";
@@ -11,9 +14,87 @@ interface VinylCardProps {
   isLoggedIn?: boolean;
   isOwner?: boolean;
   showOwners?: boolean;
+  hideBookmark?: boolean;
+  customButtons?: React.ReactNode;
+  onOwnerClick?: (username: string, userId: string) => void;
 }
 
-export default function VinylCard({ vinyl, onEdit, onDelete, isLoggedIn = false, isOwner = false, showOwners = false }: VinylCardProps) {
+export default function VinylCard({ vinyl, onEdit, onDelete, isLoggedIn = false, isOwner = false, showOwners = false, hideBookmark = false, customButtons, onOwnerClick }: VinylCardProps) {
+  const { data: session } = useSession();
+  const router = useRouter();
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [isToggling, setIsToggling] = useState(false);
+
+  // Check if vinyl is bookmarked
+  useEffect(() => {
+    if (isLoggedIn && session?.user?.id && !isOwner) {
+      fetch(`/api/bookmarks/check?vinylId=${vinyl.id}`)
+        .then(res => res.json())
+        .then(data => setIsBookmarked(data.bookmarked))
+        .catch(() => setIsBookmarked(false));
+    } else if (!isLoggedIn && !isOwner) {
+      // Check if vinyl is in pending bookmarks (localStorage)
+      const pendingBookmarks = JSON.parse(localStorage.getItem("pendingBookmarks") || "[]");
+      setIsBookmarked(pendingBookmarks.includes(vinyl.id));
+    }
+  }, [vinyl.id, isLoggedIn, isOwner, session?.user?.id]);
+
+  const handleBookmarkClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!isLoggedIn) {
+      // Store or remove bookmark in localStorage for later sync
+      const pendingBookmarks = JSON.parse(localStorage.getItem("pendingBookmarks") || "[]");
+      if (pendingBookmarks.includes(vinyl.id)) {
+        // Remove from pending bookmarks
+        const updated = pendingBookmarks.filter((id: string) => id !== vinyl.id);
+        if (updated.length > 0) {
+          localStorage.setItem("pendingBookmarks", JSON.stringify(updated));
+        } else {
+          localStorage.removeItem("pendingBookmarks");
+        }
+        setIsBookmarked(false);
+      } else {
+        // Add to pending bookmarks
+        pendingBookmarks.push(vinyl.id);
+        localStorage.setItem("pendingBookmarks", JSON.stringify(pendingBookmarks));
+        setIsBookmarked(true);
+        router.push("/login");
+      }
+      return;
+    }
+
+    if (isOwner) {
+      return; // Don't allow bookmarking own vinyls
+    }
+
+    setIsToggling(true);
+
+    try {
+      if (isBookmarked) {
+        const response = await fetch(`/api/bookmarks?vinylId=${vinyl.id}`, {
+          method: "DELETE",
+        });
+        if (response.ok) {
+          setIsBookmarked(false);
+        }
+      } else {
+        const response = await fetch("/api/bookmarks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ vinylId: vinyl.id }),
+        });
+        if (response.ok) {
+          setIsBookmarked(true);
+        }
+      }
+    } catch (error) {
+      console.error("Error toggling bookmark:", error);
+    } finally {
+      setIsToggling(false);
+    }
+  };
+
   const formatDate = (dateString?: string) => {
     if (!dateString) return null;
     try {
@@ -108,19 +189,55 @@ export default function VinylCard({ vinyl, onEdit, onDelete, isLoggedIn = false,
         {(vinyl.owners && vinyl.owners.length > 0) ? (
           <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
             {vinyl.owners.length === 1 ? (
-              <>Owned by <span className="font-semibold text-slate-700 dark:text-slate-300">{vinyl.owners[0].username}</span></>
+              <>Owned by {onOwnerClick ? (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOwnerClick(vinyl.owners![0].username, vinyl.owners![0].userId);
+                  }}
+                  className="font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 underline cursor-pointer"
+                >
+                  {vinyl.owners[0].username}
+                </button>
+              ) : (
+                <span className="font-semibold text-slate-700 dark:text-slate-300">{vinyl.owners[0].username}</span>
+              )}</>
             ) : (
               <>Owned by {vinyl.owners.map((o, idx) => (
                 <span key={o.userId}>
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">{o.username}</span>
+                  {onOwnerClick ? (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOwnerClick(o.username, o.userId);
+                      }}
+                      className="font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 underline cursor-pointer"
+                    >
+                      {o.username}
+                    </button>
+                  ) : (
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">{o.username}</span>
+                  )}
                   {idx < vinyl.owners!.length - 1 && ", "}
                 </span>
               ))}</>
             )}
           </p>
-        ) : vinyl.username ? (
+        ) : vinyl.username && vinyl.userId ? (
           <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
-            Owned by <span className="font-semibold text-slate-700 dark:text-slate-300">{vinyl.username}</span>
+            Owned by {onOwnerClick ? (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOwnerClick(vinyl.username!, vinyl.userId);
+                }}
+                className="font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 underline cursor-pointer"
+              >
+                {vinyl.username}
+              </button>
+            ) : (
+              <span className="font-semibold text-slate-700 dark:text-slate-300">{vinyl.username}</span>
+            )}
           </p>
         ) : null}
         {videoId && (
@@ -143,19 +260,51 @@ export default function VinylCard({ vinyl, onEdit, onDelete, isLoggedIn = false,
           </div>
         )}
         <div className="flex gap-2">
-          <button
-            onClick={() => onEdit(vinyl)}
-            className={`flex-1 px-3 py-2 ${isLoggedIn && isOwner ? 'bg-blue-600 hover:bg-blue-700' : 'bg-slate-600 hover:bg-slate-700'} text-white text-sm rounded transition-colors`}
-          >
-            {isLoggedIn && isOwner ? "Edit" : "Détails"}
-          </button>
-          {isLoggedIn && isOwner && onDelete && (
-            <button
-              onClick={() => onDelete(vinyl.id)}
-              className="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors"
-            >
-              Delete
-            </button>
+          {customButtons ? (
+            customButtons
+          ) : (
+            <>
+              <button
+                onClick={() => onEdit(vinyl)}
+                className={`flex-1 px-3 py-2 ${isLoggedIn && isOwner ? 'bg-blue-600 hover:bg-blue-700' : 'bg-slate-600 hover:bg-slate-700'} text-white text-sm rounded transition-colors`}
+              >
+                {isLoggedIn && isOwner ? "Edit" : "Détails"}
+              </button>
+              {!isOwner && !hideBookmark && (
+                <button
+                  onClick={handleBookmarkClick}
+                  disabled={isToggling}
+                  className={`px-3 py-2 rounded transition-colors ${
+                    isBookmarked
+                      ? "bg-yellow-500 hover:bg-yellow-600 text-white"
+                      : "bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300"
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  title={isBookmarked ? "Remove from bookmarks" : "Add to bookmarks"}
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill={isBookmarked ? "currentColor" : "none"}
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                    />
+                  </svg>
+                </button>
+              )}
+              {isLoggedIn && isOwner && onDelete && (
+                <button
+                  onClick={() => onDelete(vinyl.id)}
+                  className="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors"
+                >
+                  Delete
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>

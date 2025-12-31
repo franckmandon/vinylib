@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import VinylLibrary from "@/components/VinylLibrary";
@@ -40,16 +41,16 @@ export default function MyVinylsPage() {
                 </button>
               </div>
             ) : (
-              <div className="flex gap-2">
+              <div className="flex gap-1 sm:gap-2">
                 <Link
                   href="/login"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+                  className="px-2 py-1.5 sm:px-4 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs sm:text-sm font-medium transition-colors"
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/register"
-                  className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 rounded-lg text-sm font-medium transition-colors"
+                  className="px-2 py-1.5 sm:px-4 sm:py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 rounded-lg text-xs sm:text-sm font-medium transition-colors"
                 >
                   Sign Up
                 </Link>
@@ -57,7 +58,9 @@ export default function MyVinylsPage() {
             )}
           </div>
         </header>
-        <VinylLibrary mode="personal" />
+        <Suspense fallback={<div className="text-center py-8">Loading...</div>}>
+          <VinylLibrary mode="personal" />
+        </Suspense>
       </div>
     </main>
   );

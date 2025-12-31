@@ -193,9 +193,28 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false 
         />
       )}
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-40">
-        <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative">
+          <button
+            onClick={onCancel}
+            className="absolute top-4 right-4 z-50 p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors"
+            aria-label="Close"
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
         <div className="p-6">
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 pr-8">
             {readOnly ? "Vinyl Details" : vinyl ? "Edit Vinyl" : "Add New Vinyl"}
           </h2>
           {vinyl && (
