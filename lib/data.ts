@@ -185,6 +185,78 @@ export async function getVinylById(id: string): Promise<Vinyl | undefined> {
   return vinyls.find((v) => v.id === id);
 }
 
+// Calculate average rating from ratings array
+export function calculateAverageRating(ratings?: Array<{ userId: string; rating: number }>): number {
+  if (!ratings || ratings.length === 0) {
+    return 0;
+  }
+  const sum = ratings.reduce((acc, r) => acc + r.rating, 0);
+  return Math.round((sum / ratings.length) * 10) / 10; // Round to 1 decimal
+}
+
+// Get user's rating for a vinyl
+export function getUserRating(vinyl: Vinyl, userId: string): number | undefined {
+  if (!vinyl.ratings) {
+    return undefined;
+  }
+  const userRating = vinyl.ratings.find(r => r.userId === userId);
+  return userRating?.rating;
+}
+
+// Add or update a user's rating for a vinyl
+export async function setVinylRating(vinylId: string, userId: string, rating: number): Promise<Vinyl | null> {
+  const vinyls = await getVinyls();
+  const vinylIndex = vinyls.findIndex(v => v.id === vinylId);
+  
+  if (vinylIndex === -1) {
+    return null;
+  }
+  
+  const vinyl = vinyls[vinylIndex];
+  const user = await getUserById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+  
+  // Initialize ratings array if it doesn't exist
+  if (!vinyl.ratings) {
+    vinyl.ratings = [];
+  }
+  
+  // Find existing rating by this user
+  const existingRatingIndex = vinyl.ratings.findIndex(r => r.userId === userId);
+  
+  if (rating === 0 || rating === undefined) {
+    // Remove rating if 0 or undefined
+    if (existingRatingIndex !== -1) {
+      vinyl.ratings.splice(existingRatingIndex, 1);
+    }
+  } else {
+    // Add or update rating
+    const ratingEntry = {
+      userId,
+      username: user.username,
+      rating,
+      createdAt: existingRatingIndex !== -1 
+        ? vinyl.ratings[existingRatingIndex].createdAt 
+        : new Date().toISOString(),
+    };
+    
+    if (existingRatingIndex !== -1) {
+      vinyl.ratings[existingRatingIndex] = ratingEntry;
+    } else {
+      vinyl.ratings.push(ratingEntry);
+    }
+  }
+  
+  // Update vinyl
+  vinyl.updatedAt = new Date().toISOString();
+  vinyls[vinylIndex] = vinyl;
+  await saveVinyls(vinyls);
+  
+  return vinyl;
+}
+
 export async function addVinyl(
   vinyl: Omit<Vinyl, "id" | "createdAt" | "updatedAt" | "username" | "owners">,
   userId: string
@@ -252,6 +324,51 @@ export async function addVinyl(
       username: user.username,
       addedAt: new Date().toISOString(),
     }],
+    id: randomUUID(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  
+  // If rating is provided, add it to ratings array
+  if (vinyl.rating && vinyl.rating > 0) {
+    newVinyl.ratings = [{
+      userId: user.id,
+      username: user.username,
+      rating: vinyl.rating,
+      createdAt: new Date().toISOString(),
+    }];
+  }
+  
+  vinyls.push(newVinyl);
+  await saveVinyls(vinyls);
+  return newVinyl;
+}
+
+// Create a vinyl without owner (for bookmarks only)
+export async function createVinylForBookmark(
+  vinyl: Omit<Vinyl, "id" | "createdAt" | "updatedAt" | "userId" | "username" | "owners">
+): Promise<Vinyl> {
+  const vinyls = await getVinyls();
+  
+  // Check for duplicate by EAN if EAN is provided
+  if (vinyl.ean && vinyl.ean.trim()) {
+    const eanToSearch = vinyl.ean.trim();
+    const existingVinyl = vinyls.find(
+      (v) => v.ean && v.ean.trim() === eanToSearch
+    );
+    
+    if (existingVinyl) {
+      // Return existing vinyl (don't create duplicate)
+      return existingVinyl;
+    }
+  }
+  
+  // No duplicate found, create new vinyl without owner
+  const newVinyl: Vinyl = {
+    ...vinyl,
+    userId: "", // Empty userId means no owner
+    username: undefined,
+    owners: undefined,
     id: randomUUID(),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -896,6 +1013,13 @@ export async function addBookmark(userId: string, vinylId: string): Promise<Book
   const vinyl = await getVinylById(vinylId);
   if (!vinyl) {
     throw new Error("Vinyl not found");
+  }
+  
+  // Check if vinyl is already in user's collection
+  const isInCollection = vinyl.userId === userId || 
+                         vinyl.owners?.some(o => o.userId === userId);
+  if (isInCollection) {
+    throw new Error("This vinyl is already in your collection. Remove it from your collection first to add it to bookmarks.");
   }
   
   const newBookmark: Bookmark = {

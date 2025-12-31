@@ -9,7 +9,8 @@ export interface Vinyl {
   notes?: string;
   albumArt?: string;
   ean?: string;
-  rating?: number; // 1-5 stars
+  rating?: number; // 1-5 stars (deprecated, use ratings array instead)
+  ratings?: Array<{ userId: string; username?: string; rating: number; createdAt: string }>; // Ratings from all users
   youtubeLink?: string;
   userId: string; // ID of the primary user who owns this vinyl (for backward compatibility)
   username?: string; // Username of the primary user (for display on public pages)

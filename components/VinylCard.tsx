@@ -19,11 +19,41 @@ interface VinylCardProps {
   onOwnerClick?: (username: string, userId: string) => void;
 }
 
+// Helper function to calculate average rating and review count
+function getRatingInfo(vinyl: Vinyl) {
+  if (vinyl.ratings && vinyl.ratings.length > 0) {
+    const sum = vinyl.ratings.reduce((acc, r) => acc + r.rating, 0);
+    const average = Math.round((sum / vinyl.ratings.length) * 10) / 10;
+    return { average, count: vinyl.ratings.length };
+  }
+  // Fallback to old rating field for backward compatibility
+  if (vinyl.rating && vinyl.rating > 0) {
+    return { average: vinyl.rating, count: 1 };
+  }
+  return { average: 0, count: 0 };
+}
+
 export default function VinylCard({ vinyl, onEdit, onDelete, isLoggedIn = false, isOwner = false, showOwners = false, hideBookmark = false, customButtons, onOwnerClick }: VinylCardProps) {
   const { data: session } = useSession();
   const router = useRouter();
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
+  const [userRating, setUserRating] = useState<number | undefined>(undefined);
+  const [ratingInfo, setRatingInfo] = useState(getRatingInfo(vinyl));
+
+  // Get user's rating and update rating info
+  useEffect(() => {
+    if (vinyl.ratings && session?.user?.id) {
+      const userRatingEntry = vinyl.ratings.find(r => r.userId === session.user.id);
+      setUserRating(userRatingEntry?.rating);
+    } else if (vinyl.rating && session?.user?.id && vinyl.userId === session.user.id) {
+      // Fallback to old rating field
+      setUserRating(vinyl.rating);
+    } else {
+      setUserRating(undefined);
+    }
+    setRatingInfo(getRatingInfo(vinyl));
+  }, [vinyl, session?.user?.id]);
 
   // Check if vinyl is bookmarked
   useEffect(() => {
@@ -154,9 +184,34 @@ export default function VinylCard({ vinyl, onEdit, onDelete, isLoggedIn = false,
         <p className="text-slate-600 dark:text-slate-400 mb-2 line-clamp-1">
           {vinyl.artist}
         </p>
-        {vinyl.rating && vinyl.rating > 0 && (
+        {(ratingInfo.average > 0 || (isLoggedIn && !isOwner)) && (
           <div className="mb-2">
-            <StarRating rating={vinyl.rating} readonly size="sm" />
+            <StarRating 
+              rating={isLoggedIn && !isOwner ? (userRating || ratingInfo.average) : ratingInfo.average} 
+              onRatingChange={isLoggedIn && !isOwner ? async (rating) => {
+                try {
+                  const response = await fetch(`/api/vinyls/${vinyl.id}/rating`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ rating: rating === 0 ? undefined : rating }),
+                  });
+                  if (response.ok) {
+                    const updatedVinyl = await response.json();
+                    setUserRating(rating === 0 ? undefined : rating);
+                    setRatingInfo(getRatingInfo(updatedVinyl));
+                    // Update the vinyl prop if parent component supports it
+                    if (onEdit) {
+                      onEdit(updatedVinyl);
+                    }
+                  }
+                } catch (error) {
+                  console.error("Error updating rating:", error);
+                }
+              } : undefined}
+              readonly={!isLoggedIn || isOwner} 
+              size="sm"
+              reviewCount={ratingInfo.count}
+            />
           </div>
         )}
         <div className="flex flex-wrap gap-2 mb-3 text-xs">

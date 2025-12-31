@@ -1,6 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Vinyl, VinylFormData } from "@/types/vinyl";
 import StarRating from "./StarRating";
 import BarcodeScanner from "./BarcodeScanner";
@@ -13,6 +16,8 @@ interface VinylFormProps {
 }
 
 export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false }: VinylFormProps) {
+  const { data: session } = useSession();
+  const router = useRouter();
   const [formData, setFormData] = useState<VinylFormData>({
     artist: "",
     album: "",
@@ -31,6 +36,10 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false 
   const [showScanner, setShowScanner] = useState(false);
   const [loadingEAN, setLoadingEAN] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [showChoiceDialog, setShowChoiceDialog] = useState(false);
+  const [scannedVinylData, setScannedVinylData] = useState<VinylFormData | null>(null);
+  const [userRating, setUserRating] = useState<number | undefined>(undefined);
+  const [ratingInfo, setRatingInfo] = useState<{ average: number; count: number }>({ average: 0, count: 0 });
 
   useEffect(() => {
     if (vinyl) {
@@ -47,8 +56,29 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false 
         rating: vinyl.rating,
         youtubeLink: vinyl.youtubeLink || "",
       });
+      
+      // Get user's rating and calculate average
+      if (vinyl.ratings && session?.user?.id) {
+        const userRatingEntry = vinyl.ratings.find(r => r.userId === session.user.id);
+        setUserRating(userRatingEntry?.rating);
+      } else if (vinyl.rating && session?.user?.id && vinyl.userId === session.user.id) {
+        setUserRating(vinyl.rating);
+      } else {
+        setUserRating(undefined);
+      }
+      
+      // Calculate average rating
+      if (vinyl.ratings && vinyl.ratings.length > 0) {
+        const sum = vinyl.ratings.reduce((acc, r) => acc + r.rating, 0);
+        const average = Math.round((sum / vinyl.ratings.length) * 10) / 10;
+        setRatingInfo({ average, count: vinyl.ratings.length });
+      } else if (vinyl.rating && vinyl.rating > 0) {
+        setRatingInfo({ average: vinyl.rating, count: 1 });
+      } else {
+        setRatingInfo({ average: 0, count: 0 });
+      }
     }
-  }, [vinyl]);
+  }, [vinyl, session?.user?.id]);
 
   const fetchWikipediaContent = async () => {
     if (!formData.artist || !formData.album) {
@@ -100,6 +130,27 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false 
       });
 
       if (response.ok) {
+        const savedVinyl = await response.json();
+        
+        // If adding to collection, remove from bookmarks if it exists there
+        if (session?.user?.id && !vinyl) {
+          try {
+            const bookmarkCheckResponse = await fetch(`/api/bookmarks/check?vinylId=${savedVinyl.id}`);
+            if (bookmarkCheckResponse.ok) {
+              const { bookmarked } = await bookmarkCheckResponse.json();
+              if (bookmarked) {
+                // Remove from bookmarks
+                await fetch(`/api/bookmarks?vinylId=${savedVinyl.id}`, {
+                  method: "DELETE",
+                });
+              }
+            }
+          } catch (error) {
+            // Ignore errors when checking/removing bookmarks
+            console.error("Error checking/removing bookmark:", error);
+          }
+        }
+        
         onSubmit();
       } else {
         const error = await response.json();
@@ -123,11 +174,41 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false 
     }));
   };
 
-  const handleRatingChange = (rating: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      rating,
-    }));
+  const handleRatingChange = async (rating: number) => {
+    const finalRating = rating === 0 ? undefined : rating;
+    
+    // If editing an existing vinyl, update rating via API
+    if (vinyl && session?.user?.id) {
+      try {
+        const response = await fetch(`/api/vinyls/${vinyl.id}/rating`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rating: finalRating }),
+        });
+        if (response.ok) {
+          const updatedVinyl = await response.json();
+          setUserRating(finalRating);
+          
+          // Update rating info
+          if (updatedVinyl.ratings && updatedVinyl.ratings.length > 0) {
+            const sum = updatedVinyl.ratings.reduce((acc: number, r: any) => acc + r.rating, 0);
+            const average = Math.round((sum / updatedVinyl.ratings.length) * 10) / 10;
+            setRatingInfo({ average, count: updatedVinyl.ratings.length });
+          } else {
+            setRatingInfo({ average: 0, count: 0 });
+          }
+        }
+      } catch (error) {
+        console.error("Error updating rating:", error);
+      }
+    } else {
+      // For new vinyls, store in form data
+      setFormData((prev) => ({
+        ...prev,
+        rating: finalRating,
+      }));
+      setUserRating(finalRating);
+    }
   };
 
 
@@ -137,7 +218,7 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false 
 
   const lookupEAN = async (ean: string) => {
     if (!ean || ean.trim().length < 8) {
-      return;
+      return null;
     }
 
     setLoadingEAN(true);
@@ -147,25 +228,30 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false 
 
       if (response.ok) {
         const data = await response.json();
-        setFormData((prev) => ({
-          ...prev,
-          ean: data.ean || prev.ean,
-          artist: data.artist || prev.artist,
-          album: data.album || data.title || prev.album,
-          releaseDate: data.releaseDate || prev.releaseDate,
-          genre: data.genre || prev.genre,
-          label: data.label || prev.label,
-          albumArt: data.image || prev.albumArt,
-          notes: data.description || prev.notes,
-        }));
+        const vinylData: VinylFormData = {
+          ean: data.ean || ean,
+          artist: data.artist || "",
+          album: data.album || data.title || "",
+          releaseDate: data.releaseDate || "",
+          genre: data.genre || "",
+          label: data.label || "",
+          condition: "",
+          notes: data.description || "",
+          albumArt: data.image || "",
+          rating: undefined,
+          youtubeLink: "",
+        };
+        return vinylData;
       } else {
         const error = await response.json();
         console.error("EAN lookup error:", error);
         alert(error.error || `No product information found for EAN ${ean}. You can fill in the details manually.`);
+        return null;
       }
     } catch (error) {
       console.error("Error looking up EAN:", error);
       alert("Failed to fetch product information. You can fill in the details manually.");
+      return null;
     } finally {
       setLoadingEAN(false);
     }
@@ -173,7 +259,151 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false 
 
   const handleBarcodeScanned = async (ean: string) => {
     setShowScanner(false);
-    await lookupEAN(ean);
+    const vinylData = await lookupEAN(ean);
+    
+    if (vinylData) {
+      // If we're adding a new vinyl (not editing), show choice dialog
+      if (!vinyl) {
+        setScannedVinylData(vinylData);
+        setShowChoiceDialog(true);
+      } else {
+        // If editing, just fill the form
+        setFormData((prev) => ({
+          ...prev,
+          ...vinylData,
+        }));
+      }
+    }
+  };
+
+  const handleAddToCollection = async () => {
+    if (!scannedVinylData) return;
+    
+    // Check if this vinyl is already in bookmarks and remove it
+    if (session?.user?.id) {
+      try {
+        // First check if vinyl exists
+        const vinylsResponse = await fetch("/api/vinyls?mode=public");
+        if (vinylsResponse.ok) {
+          const vinyls = await vinylsResponse.json();
+          const existingVinyl = vinyls.find((v: Vinyl) => v.ean === scannedVinylData.ean);
+          
+          if (existingVinyl) {
+            // Check if it's bookmarked and remove it
+            const bookmarkCheckResponse = await fetch(`/api/bookmarks/check?vinylId=${existingVinyl.id}`);
+            if (bookmarkCheckResponse.ok) {
+              const { bookmarked } = await bookmarkCheckResponse.json();
+              if (bookmarked) {
+                await fetch(`/api/bookmarks?vinylId=${existingVinyl.id}`, {
+                  method: "DELETE",
+                });
+              }
+            }
+          }
+        }
+      } catch (error) {
+        // Ignore errors when checking/removing bookmarks
+        console.error("Error checking/removing bookmark:", error);
+      }
+    }
+    
+    setFormData((prev) => ({
+      ...prev,
+      ...scannedVinylData,
+    }));
+    setShowChoiceDialog(false);
+    setScannedVinylData(null);
+  };
+
+  const handleAddToBookmarks = async () => {
+    if (!scannedVinylData) return;
+
+    // Check if user is logged in
+    if (!session?.user?.id) {
+      // Store EAN in localStorage for later processing after login
+      const pendingEANs = JSON.parse(localStorage.getItem("pendingBookmarkEANs") || "[]");
+      if (!pendingEANs.find((item: any) => item.ean === scannedVinylData.ean)) {
+        pendingEANs.push({
+          ean: scannedVinylData.ean,
+          data: scannedVinylData,
+        });
+        localStorage.setItem("pendingBookmarkEANs", JSON.stringify(pendingEANs));
+      }
+      alert("Please sign in to add bookmarks. Your selection will be saved.");
+      router.push("/login");
+      return;
+    }
+
+    try {
+      // First, check if vinyl already exists
+      const vinylsResponse = await fetch("/api/vinyls?mode=public");
+      if (vinylsResponse.ok) {
+        const vinyls = await vinylsResponse.json();
+        const existingVinyl = vinyls.find((v: Vinyl) => v.ean === scannedVinylData.ean);
+        
+        if (existingVinyl) {
+          // Check if vinyl is already in user's collection
+          const isInCollection = existingVinyl.userId === session.user.id || 
+                                 existingVinyl.owners?.some((o: { userId: string; username: string; addedAt: string }) => o.userId === session.user.id);
+          
+          if (isInCollection) {
+            alert("This vinyl is already in your collection. Remove it from your collection first to add it to bookmarks.");
+            setShowChoiceDialog(false);
+            setScannedVinylData(null);
+            return;
+          }
+          
+          // Add existing vinyl to bookmarks
+          const bookmarkResponse = await fetch("/api/bookmarks", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ vinylId: existingVinyl.id }),
+          });
+
+          if (bookmarkResponse.ok) {
+            alert("Vinyl added to bookmarks!");
+            setShowChoiceDialog(false);
+            setScannedVinylData(null);
+            onCancel(); // Close the form
+          } else {
+            const error = await bookmarkResponse.json();
+            alert(error.error || "Failed to add to bookmarks");
+          }
+        } else {
+          // Create vinyl without owner (for bookmarks only), then add to bookmarks
+          const createResponse = await fetch("/api/vinyls/bookmark", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(scannedVinylData),
+          });
+
+          if (createResponse.ok) {
+            const newVinyl = await createResponse.json();
+            const bookmarkResponse = await fetch("/api/bookmarks", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ vinylId: newVinyl.id }),
+            });
+
+            if (bookmarkResponse.ok) {
+              alert("Vinyl added to bookmarks!");
+              setShowChoiceDialog(false);
+              setScannedVinylData(null);
+              onCancel(); // Close the form
+            } else {
+              const error = await bookmarkResponse.json();
+              alert(error.error || "Failed to add to bookmarks");
+            }
+          } else {
+            const error = await createResponse.json();
+            alert(error.error || "Failed to create vinyl");
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error adding to bookmarks:", error);
+      alert("An error occurred. Please try again.");
+    }
   };
 
   const handleEANLookup = async () => {
@@ -191,6 +421,61 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false 
           onScanSuccess={handleBarcodeScanned}
           onClose={() => setShowScanner(false)}
         />
+      )}
+      {showChoiceDialog && scannedVinylData && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-[100]">
+          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+              Add to Collection or Bookmarks?
+            </h3>
+            {scannedVinylData.albumArt && (
+              <div className="mb-4 relative w-full h-48 rounded-lg overflow-hidden">
+                <Image
+                  src={scannedVinylData.albumArt}
+                  alt={scannedVinylData.album || "Album cover"}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+              </div>
+            )}
+            <div className="mb-4">
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Artist</p>
+              <p className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                {scannedVinylData.artist || "Unknown"}
+              </p>
+            </div>
+            <div className="mb-4">
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Album</p>
+              <p className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                {scannedVinylData.album || "Unknown"}
+              </p>
+            </div>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={handleAddToCollection}
+                className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+              >
+                Add to Collection
+              </button>
+              <button
+                onClick={handleAddToBookmarks}
+                className="w-full px-4 py-3 bg-slate-600 hover:bg-slate-700 text-white rounded-lg font-medium transition-colors"
+              >
+                Add to Bookmarks
+              </button>
+              <button
+                onClick={() => {
+                  setShowChoiceDialog(false);
+                  setScannedVinylData(null);
+                }}
+                className="w-full px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 rounded-lg font-medium transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-40">
         <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative">
@@ -431,12 +716,35 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false 
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Rating
               </label>
-              <StarRating
-                rating={formData.rating || 0}
-                onRatingChange={readOnly ? undefined : handleRatingChange}
-                size="lg"
-                readonly={readOnly}
-              />
+              {readOnly && ratingInfo.count > 0 ? (
+                <div>
+                  <StarRating
+                    rating={ratingInfo.average}
+                    readonly={true}
+                    size="lg"
+                    reviewCount={ratingInfo.count}
+                  />
+                  {session?.user?.id && (
+                    <div className="mt-2">
+                      <p className="text-xs text-slate-600 dark:text-slate-400 mb-1">Your rating:</p>
+                      <StarRating
+                        rating={userRating || 0}
+                        onRatingChange={handleRatingChange}
+                        size="md"
+                        readonly={false}
+                      />
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <StarRating
+                  rating={userRating || formData.rating || 0}
+                  onRatingChange={readOnly ? undefined : handleRatingChange}
+                  size="lg"
+                  readonly={readOnly}
+                  reviewCount={ratingInfo.count > 0 ? ratingInfo.count : undefined}
+                />
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
