@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "My Vinylib - Vinyl Library Manager",
+  title: "Vinyl Report - Vinyl Library Manager",
   description: "Manage your vinyl collection with ease",
 };
 

@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
         
         // Build headers
         const headers: Record<string, string> = {
-          "User-Agent": "MyVinylib/1.0 +https://github.com/franckmandon/vinylib",
+          "User-Agent": "VinylReport/1.0 +https://github.com/franckmandon/vinylib",
           "Accept": "application/json",
         };
         
@@ -187,7 +187,7 @@ export async function GET(request: NextRequest) {
               
               // Build headers for detail request
               const detailHeaders: Record<string, string> = {
-                "User-Agent": "MyVinylib/1.0 +https://github.com/franckmandon/vinylib",
+                "User-Agent": "VinylReport/1.0 +https://github.com/franckmandon/vinylib",
                 "Accept": "application/json",
               };
               
@@ -330,7 +330,7 @@ export async function GET(request: NextRequest) {
       const openEanUrl = `https://opengtindb.org/?ean=${cleanEAN}&cmd=query&queryid=400000000`;
       const response = await fetch(openEanUrl, {
         headers: {
-          "User-Agent": "My Vinylib Vinyl Library Manager/1.0",
+          "User-Agent": "Vinyl Report Vinyl Library Manager/1.0",
         },
       });
 

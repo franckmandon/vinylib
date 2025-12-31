@@ -1,4 +1,4 @@
-# My Vinylib
+# Vinyl Report
 
 Application web pour gérer votre collection de vinyles.
 
