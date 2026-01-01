@@ -298,12 +298,13 @@ export async function addVinyl(
         }
       }
       
-      // Add the new owner with condition
+      // Add the new owner with condition and notes
       existingVinyl.owners.push({
         userId: user.id,
         username: user.username,
         addedAt: new Date().toISOString(),
         condition: vinyl.condition,
+        notes: vinyl.notes,
       });
       
       // Update the vinyl
@@ -325,6 +326,7 @@ export async function addVinyl(
       username: user.username,
       addedAt: new Date().toISOString(),
       condition: vinyl.condition,
+      notes: vinyl.notes,
     }],
     id: randomUUID(),
     createdAt: new Date().toISOString(),

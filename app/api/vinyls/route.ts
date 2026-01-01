@@ -125,43 +125,52 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Extract condition from updates and handle it separately
-    const { condition, ...otherUpdates } = updates;
+    // Extract condition and notes from updates and handle them separately
+    const { condition, notes, ...otherUpdates } = updates;
+    
+    // Initialize owners array if needed
+    if (!existingVinyl.owners) {
+      existingVinyl.owners = [];
+      // Add the original owner to the list if needed
+      if (existingVinyl.userId && existingVinyl.username) {
+        existingVinyl.owners.push({
+          userId: existingVinyl.userId,
+          username: existingVinyl.username,
+          addedAt: existingVinyl.createdAt,
+        });
+      }
+    }
+    
+    // Find or create owner entry for this user
+    let ownerIndex = existingVinyl.owners.findIndex(o => o.userId === session.user.id);
+    if (ownerIndex === -1) {
+      // User should be in owners, but if not, add them
+      const user = await getUserById(session.user.id);
+      if (user) {
+        existingVinyl.owners.push({
+          userId: session.user.id,
+          username: user.username,
+          addedAt: new Date().toISOString(),
+        });
+        ownerIndex = existingVinyl.owners.length - 1;
+      }
+    }
     
     // Update condition in owners array for this user
-    if (condition !== undefined) {
-      if (!existingVinyl.owners) {
-        existingVinyl.owners = [];
-        // Add the original owner to the list if needed
-        if (existingVinyl.userId && existingVinyl.username) {
-          existingVinyl.owners.push({
-            userId: existingVinyl.userId,
-            username: existingVinyl.username,
-            addedAt: existingVinyl.createdAt,
-          });
-        }
-      }
-      
-      // Find or create owner entry for this user
-      const ownerIndex = existingVinyl.owners.findIndex(o => o.userId === session.user.id);
-      if (ownerIndex !== -1) {
-        existingVinyl.owners[ownerIndex].condition = condition || undefined;
-      } else {
-        // User should be in owners, but if not, add them
-        const user = await getUserById(session.user.id);
-        if (user) {
-          existingVinyl.owners.push({
-            userId: session.user.id,
-            username: user.username,
-            addedAt: new Date().toISOString(),
-            condition: condition || undefined,
-          });
-        }
-      }
-      
+    if (condition !== undefined && ownerIndex !== -1) {
+      existingVinyl.owners[ownerIndex].condition = condition || undefined;
       // Also update the vinyl's condition field for backward compatibility (only if user is primary owner)
       if (existingVinyl.userId === session.user.id) {
         otherUpdates.condition = condition;
+      }
+    }
+    
+    // Update notes in owners array for this user
+    if (notes !== undefined && ownerIndex !== -1) {
+      existingVinyl.owners[ownerIndex].notes = notes || undefined;
+      // Also update the vinyl's notes field for backward compatibility (only if user is primary owner)
+      if (existingVinyl.userId === session.user.id) {
+        otherUpdates.notes = notes;
       }
     }
 

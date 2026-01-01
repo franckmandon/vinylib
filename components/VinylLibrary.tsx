@@ -162,26 +162,6 @@ export default function VinylLibrary({ mode = "public" }: VinylLibraryProps) {
     setShowForm(true);
   };
 
-  const handleEditVinyl = (vinyl: Vinyl) => {
-    if (!isLoggedIn) {
-      // Show details instead of editing
-      handleViewDetails(vinyl);
-      return;
-    }
-    // Check if user owns this vinyl (check both userId and owners array)
-    const ownsVinyl = session?.user?.id && (
-      vinyl.userId === session.user.id || 
-      vinyl.owners?.some(o => o.userId === session.user.id)
-    );
-    if (!ownsVinyl) {
-      // User doesn't own this vinyl, show details instead
-      handleViewDetails(vinyl);
-      return;
-    }
-    setEditingVinyl(vinyl);
-    setShowForm(true);
-  };
-  
   const handleViewDetails = (vinyl: Vinyl) => {
     setEditingVinyl(vinyl);
     setShowForm(true);
@@ -265,7 +245,7 @@ export default function VinylLibrary({ mode = "public" }: VinylLibraryProps) {
         />
         <div className="flex items-center gap-2">
           {/* View Mode Toggle */}
-          <div className="flex items-center gap-1 bg-slate-200 dark:bg-slate-700 rounded-lg p-1">
+          <div className="flex items-center gap-1 rounded-lg p-1">
             <button
               onClick={() => setViewMode("grid")}
               className={`p-2 rounded transition-colors ${
@@ -309,13 +289,7 @@ export default function VinylLibrary({ mode = "public" }: VinylLibraryProps) {
           vinyl={editingVinyl}
           onSubmit={handleFormSubmit}
           onCancel={handleFormCancel}
-          readOnly={
-            !isLoggedIn || 
-            !!(editingVinyl && session?.user?.id && (
-              editingVinyl.userId !== session.user.id && 
-              !editingVinyl.owners?.some(o => o.userId === session.user.id)
-            ))
-          }
+          readOnly={editingVinyl !== null}
         />
       )}
 
@@ -336,8 +310,7 @@ export default function VinylLibrary({ mode = "public" }: VinylLibraryProps) {
               <VinylCard
                 key={vinyl.id}
                 vinyl={vinyl}
-                onEdit={isLoggedIn ? handleEditVinyl : handleViewDetails}
-                onDelete={ownsVinyl ? handleDeleteVinyl : undefined}
+                onEdit={handleViewDetails}
                 isLoggedIn={isLoggedIn}
                 isOwner={!!ownsVinyl}
                 showOwners={!isPersonalMode} // Show owners on public page
@@ -372,7 +345,7 @@ export default function VinylLibrary({ mode = "public" }: VinylLibraryProps) {
                   <VinylListItem
                     key={vinyl.id}
                     vinyl={vinyl}
-                    onEdit={isLoggedIn ? handleEditVinyl : handleViewDetails}
+                    onEdit={handleViewDetails}
                     onDelete={ownsVinyl ? handleDeleteVinyl : undefined}
                     isLoggedIn={isLoggedIn}
                     isOwner={!!ownsVinyl}

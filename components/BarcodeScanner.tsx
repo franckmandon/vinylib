@@ -75,15 +75,15 @@ export default function BarcodeScanner({
         
         // Messages d'erreur spécifiques en français
         if (errorMessage.includes("NotAllowedError") || errorMessage.includes("permission")) {
-          setError("❌ Permission caméra refusée. Veuillez autoriser l'accès à la caméra dans les paramètres de Safari et réessayer.");
+          setError("❌ Camera permission denied. Please allow camera access in Safari settings and try again.");
         } else if (errorMessage.includes("NotFoundError") || errorMessage.includes("no camera")) {
-          setError("❌ Aucune caméra trouvée. Assurez-vous que votre appareil possède une caméra.");
+          setError("❌ No camera found. Make sure your device has a camera.");
         } else if (errorMessage.includes("NotReadableError") || errorMessage.includes("already in use")) {
-          setError("❌ La caméra est déjà utilisée par une autre application. Fermez les autres apps utilisant la caméra.");
+          setError("❌ Camera is already in use by another application. Close other apps using the camera.");
         } else if (!isSecureContext) {
-          setError("⚠️ HTTPS requis. Les navigateurs mobiles nécessitent une connexion sécurisée (HTTPS) pour accéder à la caméra.");
+          setError("⚠️ HTTPS required. Mobile browsers require a secure connection (HTTPS) to access the camera.");
         } else {
-          setError(`❌ Échec d'accès à la caméra: ${errorMessage}. Vérifiez les permissions et réessayez.`);
+          setError(`❌ Failed to access camera: ${errorMessage}. Check permissions and try again.`);
         }
         return;
       }
