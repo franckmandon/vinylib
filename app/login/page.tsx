@@ -29,9 +29,16 @@ function LoginForm() {
   // Redirect if already logged in
   useEffect(() => {
     if (status === "authenticated" && session) {
-      router.push("/");
+      // Preserve owner/ownerId params if they exist
+      const owner = searchParams.get("owner");
+      const ownerId = searchParams.get("ownerId");
+      if (owner && ownerId) {
+        router.push(`/?owner=${encodeURIComponent(owner)}&ownerId=${encodeURIComponent(ownerId)}`);
+      } else {
+        router.push("/");
+      }
     }
-  }, [status, session, router]);
+  }, [status, session, router, searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,8 +56,14 @@ function LoginForm() {
         setError("Invalid email/username or password");
         setLoading(false);
       } else if (result?.ok) {
-        // Force a full page reload to ensure session is available
-        window.location.href = "/";
+        // Preserve owner/ownerId params if they exist
+        const owner = searchParams.get("owner");
+        const ownerId = searchParams.get("ownerId");
+        if (owner && ownerId) {
+          window.location.href = `/?owner=${encodeURIComponent(owner)}&ownerId=${encodeURIComponent(ownerId)}`;
+        } else {
+          window.location.href = "/";
+        }
       }
     } catch (error) {
       setError("An error occurred. Please try again.");
@@ -59,11 +72,19 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-md w-full p-8">
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
-          Login
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex flex-col items-center justify-center p-4">
+      <div className="text-center mb-6">
+        <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+          Vinyl Report
         </h1>
+        <p className="text-slate-600 dark:text-slate-400 text-[1.4rem]">
+          Mind the wax
+        </p>
+      </div>
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-md w-full p-8">
+        <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+          Login
+        </h2>
         <p className="text-slate-600 dark:text-slate-400 mb-6">
           Sign in to your Vinyl Report account
         </p>
@@ -146,7 +167,7 @@ function LoginForm() {
             href="/forgot-password"
             className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
           >
-            Vous avez perdu votre mot de passe ?
+            Forgot your password?
           </Link>
         </div>
 

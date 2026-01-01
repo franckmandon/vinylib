@@ -173,7 +173,10 @@ export default function VinylListItem({
     <tr className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
       {/* Thumbnail */}
       <td className="p-3">
-        <div className="relative w-[100px] h-[100px] rounded overflow-hidden bg-slate-200 dark:bg-slate-700">
+        <div 
+          className="relative w-[100px] h-[100px] rounded overflow-hidden bg-slate-200 dark:bg-slate-700 cursor-pointer hover:opacity-90 transition-opacity"
+          onClick={() => onEdit(vinyl)}
+        >
           {vinyl.albumArt ? (
             <Image
               src={vinyl.albumArt}

@@ -26,7 +26,7 @@ export default function VinylLibrary({ mode = "public", hideSearch = false, limi
   const [editingVinyl, setEditingVinyl] = useState<Vinyl | null>(null);
   const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<"artist" | "album" | "releaseDate" | "rating">("artist");
+  const [sortBy, setSortBy] = useState<"artist" | "album" | "releaseDate" | "rating" | "dateAdded" | "ownerCount">("dateAdded");
   const [selectedGenre, setSelectedGenre] = useState("");
   const [filterByOwner, setFilterByOwner] = useState<{ username: string; userId: string } | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -87,14 +87,19 @@ export default function VinylLibrary({ mode = "public", hideSearch = false, limi
     } else {
       filtered.sort((a, b) => {
         switch (sortBy) {
+          case "dateAdded":
+            // Sort by creation date, most recent first
+            const dateA = new Date(a.createdAt || a.updatedAt || 0).getTime();
+            const dateB = new Date(b.createdAt || b.updatedAt || 0).getTime();
+            return dateB - dateA; // Newest first
           case "artist":
             return a.artist.localeCompare(b.artist);
           case "album":
             return a.album.localeCompare(b.album);
           case "releaseDate":
-            const dateA = a.releaseDate ? new Date(a.releaseDate).getTime() : 0;
-            const dateB = b.releaseDate ? new Date(b.releaseDate).getTime() : 0;
-            return dateB - dateA; // Newest first
+            const releaseDateA = a.releaseDate ? new Date(a.releaseDate).getTime() : 0;
+            const releaseDateB = b.releaseDate ? new Date(b.releaseDate).getTime() : 0;
+            return releaseDateB - releaseDateA; // Newest first
           case "rating":
             // Calculate average rating for comparison
             const getAvgRating = (v: Vinyl) => {
@@ -105,6 +110,17 @@ export default function VinylLibrary({ mode = "public", hideSearch = false, limi
               return v.rating || 0;
             };
             return getAvgRating(b) - getAvgRating(a); // Highest first
+          case "ownerCount":
+            // Count total owners: 1 if userId exists + owners array length
+            const getOwnerCount = (v: Vinyl) => {
+              let count = 0;
+              if (v.userId) count = 1;
+              if (v.owners && v.owners.length > 0) {
+                count += v.owners.length;
+              }
+              return count;
+            };
+            return getOwnerCount(b) - getOwnerCount(a); // Most owners first
           default:
             return 0;
         }

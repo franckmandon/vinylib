@@ -3,8 +3,8 @@
 interface SearchBarProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
-  sortBy: "artist" | "album" | "releaseDate" | "rating";
-  onSortChange: (sort: "artist" | "album" | "releaseDate" | "rating") => void;
+  sortBy: "artist" | "album" | "releaseDate" | "rating" | "dateAdded" | "ownerCount";
+  onSortChange: (sort: "artist" | "album" | "releaseDate" | "rating" | "dateAdded" | "ownerCount") => void;
   selectedGenre: string;
   onGenreChange: (genre: string) => void;
   availableGenres: string[];
@@ -47,14 +47,16 @@ export default function SearchBar({
         <select
           value={sortBy}
           onChange={(e) =>
-            onSortChange(e.target.value as "artist" | "album" | "releaseDate" | "rating")
+            onSortChange(e.target.value as "artist" | "album" | "releaseDate" | "rating" | "dateAdded" | "ownerCount")
           }
           className="px-4 py-2 pr-10 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
         >
+          <option value="dateAdded">Sort by Date Added</option>
           <option value="artist">Sort by Artist</option>
           <option value="album">Sort by Album</option>
           <option value="releaseDate">Sort by Release Date</option>
           <option value="rating">Sort by Rating</option>
+          <option value="ownerCount">Sort by Number of Owners</option>
         </select>
         <svg
           className="absolute right-4 top-2.5 w-5 h-5 text-slate-400 pointer-events-none"

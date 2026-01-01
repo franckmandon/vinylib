@@ -21,7 +21,7 @@ export default function BookmarksPage() {
   const [showForm, setShowForm] = useState(false);
   const [selectedVinyl, setSelectedVinyl] = useState<Vinyl | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<"artist" | "album" | "releaseDate" | "rating">("artist");
+  const [sortBy, setSortBy] = useState<"artist" | "album" | "releaseDate" | "rating" | "dateAdded" | "ownerCount">("dateAdded");
   const [selectedGenre, setSelectedGenre] = useState("");
 
   useEffect(() => {
@@ -96,16 +96,29 @@ export default function BookmarksPage() {
     // Sort
     filtered.sort((a, b) => {
       switch (sortBy) {
+        case "dateAdded":
+          // Sort by bookmark creation date, most recent first
+          const dateA = new Date(a.createdAt || a.vinyl.createdAt || 0).getTime();
+          const dateB = new Date(b.createdAt || b.vinyl.createdAt || 0).getTime();
+          return dateB - dateA; // Newest first
         case "artist":
           return a.vinyl.artist.localeCompare(b.vinyl.artist);
         case "album":
           return a.vinyl.album.localeCompare(b.vinyl.album);
         case "releaseDate":
-          const dateA = a.vinyl.releaseDate ? new Date(a.vinyl.releaseDate).getTime() : 0;
-          const dateB = b.vinyl.releaseDate ? new Date(b.vinyl.releaseDate).getTime() : 0;
-          return dateB - dateA; // Newest first
+          const releaseDateA = a.vinyl.releaseDate ? new Date(a.vinyl.releaseDate).getTime() : 0;
+          const releaseDateB = b.vinyl.releaseDate ? new Date(b.vinyl.releaseDate).getTime() : 0;
+          return releaseDateB - releaseDateA; // Newest first
         case "rating":
           return (b.vinyl.rating || 0) - (a.vinyl.rating || 0); // Highest first
+        case "ownerCount":
+          const getOwnerCount = (v: Vinyl) => {
+            let count = 0;
+            if (v.userId) count++; // Original owner
+            if (v.owners) count += v.owners.length; // Additional owners
+            return count;
+          };
+          return getOwnerCount(b.vinyl) - getOwnerCount(a.vinyl); // Highest first
         default:
           return 0;
       }
@@ -206,6 +219,11 @@ export default function BookmarksPage() {
               <p className="text-slate-600 dark:text-slate-400 text-[1.4rem]">
                 My Bookmarks
               </p>
+              {session?.user && (
+                <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
+                  You have {bookmarks.length} {bookmarks.length === 1 ? 'bookmark' : 'bookmarks'}
+                </p>
+              )}
             </div>
             {session?.user ? (
               <div className="flex items-center gap-4">

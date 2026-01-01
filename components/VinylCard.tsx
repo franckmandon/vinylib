@@ -163,7 +163,10 @@ export default function VinylCard({ vinyl, onEdit, onDelete, isLoggedIn = false,
   
   return (
     <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md hover:shadow-xl transition-shadow overflow-hidden flex flex-col h-full">
-      <div className="aspect-square bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center">
+      <div 
+        className="aspect-square bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity"
+        onClick={() => onEdit(vinyl)}
+      >
         {vinyl.albumArt ? (
           <Image
             src={vinyl.albumArt}

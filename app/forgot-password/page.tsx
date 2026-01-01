@@ -43,28 +43,36 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-md w-full p-8">
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
-          Mot de passe oublié
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex flex-col items-center justify-center p-4">
+      <div className="text-center mb-6">
+        <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+          Vinyl Report
         </h1>
+        <p className="text-slate-600 dark:text-slate-400 text-[1.4rem]">
+          Mind the wax
+        </p>
+      </div>
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-md w-full p-8">
+        <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+          Forgot Password
+        </h2>
         <p className="text-slate-600 dark:text-slate-400 mb-6">
-          Entrez votre adresse email et nous vous enverrons un lien pour réinitialiser votre mot de passe.
+          Enter your email address and we&apos;ll send you a link to reset your password.
         </p>
 
         {success ? (
           <div className="space-y-4">
             <div className="p-4 bg-green-100 dark:bg-green-900/30 border border-green-400 dark:border-green-700 rounded text-green-700 dark:text-green-300">
-              <p className="font-semibold mb-2">Email envoyé !</p>
+              <p className="font-semibold mb-2">Email sent!</p>
               <p className="text-sm">
-                Si un compte existe avec cette adresse email, vous recevrez un lien pour réinitialiser votre mot de passe.
+                If an account exists with this email address, you will receive a link to reset your password.
               </p>
             </div>
             <Link
               href="/login"
               className="block w-full text-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
             >
-              Retour à la connexion
+              Back to login
             </Link>
           </div>
         ) : (
@@ -94,7 +102,7 @@ export default function ForgotPasswordPage() {
               disabled={loading}
               className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg font-medium transition-colors"
             >
-              {loading ? "Envoi en cours..." : "Envoyer le lien de réinitialisation"}
+              {loading ? "Sending..." : "Send reset link"}
             </button>
           </form>
         )}
@@ -104,7 +112,7 @@ export default function ForgotPasswordPage() {
             href="/login"
             className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
           >
-            ← Retour à la connexion
+            ← Back to login
           </Link>
         </div>
 
@@ -113,7 +121,7 @@ export default function ForgotPasswordPage() {
             href="/"
             className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
           >
-            ← Retour à l&apos;accueil
+            ← Back to home
           </Link>
         </p>
       </div>

@@ -206,7 +206,7 @@ function ResetPasswordForm() {
             href="/login"
             className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
           >
-            ← Retour à la connexion
+            ← Back to login
           </Link>
         </p>
       </div>

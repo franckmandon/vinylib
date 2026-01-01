@@ -63,11 +63,19 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-md w-full p-8">
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
-          Sign Up
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex flex-col items-center justify-center p-4">
+      <div className="text-center mb-6">
+        <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+          Vinyl Report
         </h1>
+        <p className="text-slate-600 dark:text-slate-400 text-[1.4rem]">
+          Mind the wax
+        </p>
+      </div>
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-md w-full p-8">
+        <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+          Sign Up
+        </h2>
         <p className="text-slate-600 dark:text-slate-400 mb-6">
           Create your Vinyl Report account
         </p>

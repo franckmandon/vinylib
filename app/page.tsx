@@ -2,20 +2,31 @@
 
 import { Suspense, useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import VinylLibrary from "@/components/VinylLibrary";
 import UserMenu from "@/components/UserMenu";
 
 function HomeContent() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [ownerFilter, setOwnerFilter] = useState<string | null>(null);
 
   useEffect(() => {
     const owner = searchParams.get("owner");
+    const ownerId = searchParams.get("ownerId");
+    
+    // If there's a shared collection link (owner params) and user is not logged in
+    if (owner && ownerId && status === "unauthenticated") {
+      // Redirect to login with the share parameters to preserve them
+      const loginUrl = `/login?owner=${encodeURIComponent(owner)}&ownerId=${encodeURIComponent(ownerId)}`;
+      router.push(loginUrl);
+      return;
+    }
+    
     setOwnerFilter(owner);
-  }, [searchParams]);
+  }, [searchParams, status, router]);
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
