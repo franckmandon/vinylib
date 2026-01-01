@@ -16,6 +16,7 @@ interface EANLookupResult {
   label?: string;
   releaseDate?: string;
   trackList?: Array<{ title: string; duration?: string }>;
+  country?: string;
 }
 
 export async function GET(request: NextRequest) {
@@ -161,6 +162,7 @@ export async function GET(request: NextRequest) {
               const genre = (releaseDetails?.genres?.[0]) || (Array.isArray(release.genre) ? release.genre[0] : release.genre) || "";
               const label = releaseDetails?.labels?.[0]?.name || "";
               const releaseDate = releaseDetails?.released || (release.year ? release.year.toString() : "") || "";
+              const country = releaseDetails?.country || "";
               
               // Extract track list from Discogs
               let trackList: Array<{ title: string; duration?: string }> | undefined = undefined;
@@ -184,6 +186,7 @@ export async function GET(request: NextRequest) {
                   label: label || undefined,
                   releaseDate: releaseDate || undefined,
                   trackList: trackList || undefined,
+                  country: country || undefined,
                 };
               }
             }

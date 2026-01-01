@@ -66,11 +66,17 @@ export async function POST(request: NextRequest) {
       label: data.label,
       condition: data.condition,
       notes: data.notes,
+      artistBio: data.artistBio,
+      purchasePrice: data.purchasePrice,
+      addedAt: data.addedAt || new Date().toISOString(),
       albumArt: data.albumArt,
       ean: data.ean,
       rating: data.rating,
       spotifyLink: data.spotifyLink,
       trackList: data.trackList,
+      country: data.country,
+      credits: data.credits,
+      pressingType: data.pressingType,
       userId: session.user.id,
     }, session.user.id);
 
@@ -125,8 +131,8 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Extract condition and notes from updates and handle them separately
-    const { condition, notes, ...otherUpdates } = updates;
+    // Extract condition, notes, purchasePrice, and addedAt from updates and handle them separately
+    const { condition, notes, purchasePrice, addedAt, ...otherUpdates } = updates;
     
     // Initialize owners array if needed
     if (!existingVinyl.owners) {
@@ -172,6 +178,16 @@ export async function PUT(request: NextRequest) {
       if (existingVinyl.userId === session.user.id) {
         otherUpdates.notes = notes;
       }
+    }
+    
+    // Update purchasePrice in owners array for this user
+    if (purchasePrice !== undefined && ownerIndex !== -1) {
+      existingVinyl.owners[ownerIndex].purchasePrice = purchasePrice || undefined;
+    }
+    
+    // Update addedAt in owners array for this user
+    if (addedAt !== undefined && ownerIndex !== -1) {
+      existingVinyl.owners[ownerIndex].addedAt = addedAt || existingVinyl.owners[ownerIndex].addedAt;
     }
 
     const updatedVinyl = await updateVinyl(id, { ...otherUpdates, owners: existingVinyl.owners });

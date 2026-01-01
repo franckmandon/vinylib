@@ -13,9 +13,10 @@ interface VinylFormProps {
   onSubmit: () => void;
   onCancel: () => void;
   readOnly?: boolean; // If true, form is in view-only mode
+  onSelectVinyl?: (vinylId: string) => void; // Callback to select another vinyl
 }
 
-export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false }: VinylFormProps) {
+export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false, onSelectVinyl }: VinylFormProps) {
   const { data: session } = useSession();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
@@ -27,16 +28,26 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false 
     label: "",
     condition: "",
     notes: "",
+    artistBio: "",
+    purchasePrice: undefined,
+    addedAt: "",
     albumArt: "",
     ean: "",
     rating: undefined,
     spotifyLink: "",
     trackList: undefined,
+    country: "",
+    credits: "",
+    pressingType: undefined,
   });
   const [loading, setLoading] = useState(false);
   const [loadingWikipedia, setLoadingWikipedia] = useState(false);
+  const [loadingWikipediaArtist, setLoadingWikipediaArtist] = useState(false);
+  const [loadingWikipediaCredits, setLoadingWikipediaCredits] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [loadingEAN, setLoadingEAN] = useState(false);
+  const [otherAlbums, setOtherAlbums] = useState<Array<{ id: string; album: string; albumArt?: string }>>([]);
+  const [loadingOtherAlbums, setLoadingOtherAlbums] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [showChoiceDialog, setShowChoiceDialog] = useState(false);
   const [scannedVinylData, setScannedVinylData] = useState<VinylFormData | null>(null);
@@ -51,14 +62,20 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false 
       // Get user's condition from owners array if available
       let userCondition = "";
       let userNotes = "";
+      let userPurchasePrice: number | undefined = undefined;
+      let userAddedAt = "";
       if (session?.user?.id && vinyl.owners) {
         const userOwner = vinyl.owners.find(o => o.userId === session.user.id);
         userCondition = userOwner?.condition || "";
         userNotes = userOwner?.notes || "";
+        userPurchasePrice = userOwner?.purchasePrice;
+        userAddedAt = userOwner?.addedAt || "";
       } else if (session?.user?.id && vinyl.userId === session.user.id) {
         // Fallback to vinyl.condition and vinyl.notes for backward compatibility
         userCondition = vinyl.condition || "";
         userNotes = vinyl.notes || "";
+        // For backward compatibility, use createdAt as addedAt
+        userAddedAt = vinyl.createdAt || "";
       } else if (!session?.user?.id) {
         // For non-logged-in users, show notes from first owner or vinyl notes
         if (vinyl.owners && vinyl.owners.length > 0) {
@@ -80,11 +97,17 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false 
         label: vinyl.label || "",
         condition: userCondition,
         notes: userNotes,
+        artistBio: vinyl.artistBio || "",
+        purchasePrice: userPurchasePrice,
+        addedAt: userAddedAt,
         albumArt: vinyl.albumArt || "",
         ean: vinyl.ean || "",
         rating: vinyl.rating,
         spotifyLink: vinyl.spotifyLink || "",
         trackList: vinyl.trackList || undefined,
+        country: vinyl.country || "",
+        credits: vinyl.credits || "",
+        pressingType: vinyl.pressingType || undefined,
       });
       
       // Get user's rating and calculate average
@@ -178,9 +201,11 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false 
     }
   }, [vinyl?.id, readOnly, session?.user?.id, isOwner]);
 
-  const fetchWikipediaContent = async () => {
+  const fetchWikipediaContent = async (silent = false) => {
     if (!formData.artist || !formData.album) {
-      alert("Please enter both artist and album before fetching Wikipedia content");
+      if (!silent) {
+        alert("Please enter both artist and album before fetching Wikipedia content");
+      }
       return;
     }
 
@@ -197,16 +222,149 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false 
           notes: data.content || prev.notes,
         }));
       } else {
-        const error = await response.json();
-        alert(error.error || "Failed to fetch Wikipedia content");
-      }
+          const error = await response.json();
+          if (!silent) {
+            alert(error.error || "Failed to fetch Wikipedia content");
+          }
+        }
     } catch (error) {
       console.error("Error fetching Wikipedia content:", error);
-      alert("Failed to fetch Wikipedia content");
+      if (!silent) {
+        alert("Failed to fetch Wikipedia content");
+      }
     } finally {
       setLoadingWikipedia(false);
     }
   };
+
+  // Auto-fetch Wikipedia description when artist and album are available
+  const autoFetchWikipediaDescription = async (artist: string, album: string) => {
+    if (!artist || !album) return;
+    
+    // Only fetch if notes is empty or very short
+    if (formData.notes && formData.notes.trim().length > 50) return;
+    
+    setLoadingWikipedia(true);
+    try {
+      const response = await fetch(
+        `/api/wikipedia?artist=${encodeURIComponent(artist)}&album=${encodeURIComponent(album)}`
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.content) {
+          setFormData((prev) => ({
+            ...prev,
+            notes: data.content,
+          }));
+        }
+      }
+    } catch (error) {
+      console.error("Error auto-fetching Wikipedia content:", error);
+      // Silent fail for auto-fetch
+    } finally {
+      setLoadingWikipedia(false);
+    }
+  };
+
+  const fetchWikipediaArtistBio = async () => {
+    if (!formData.artist) {
+      alert("Please enter an artist name before fetching Wikipedia content");
+      return;
+    }
+
+    setLoadingWikipediaArtist(true);
+    try {
+      const response = await fetch(
+        `/api/wikipedia-artist?artist=${encodeURIComponent(formData.artist)}`
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setFormData((prev) => ({
+          ...prev,
+          artistBio: data.content || prev.artistBio,
+        }));
+      } else {
+        const error = await response.json();
+        alert(error.error || "Failed to fetch Wikipedia content");
+      }
+    } catch (error) {
+      console.error("Error fetching Wikipedia artist bio:", error);
+      alert("Failed to fetch Wikipedia content");
+    } finally {
+      setLoadingWikipediaArtist(false);
+    }
+  };
+
+  const fetchWikipediaCredits = async () => {
+    if (!formData.artist || !formData.album) {
+      alert("Please enter both artist and album before fetching Wikipedia credits");
+      return;
+    }
+
+    setLoadingWikipediaCredits(true);
+    try {
+      const response = await fetch(
+        `/api/wikipedia-credits?artist=${encodeURIComponent(formData.artist)}&album=${encodeURIComponent(formData.album)}`
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setFormData((prev) => ({
+          ...prev,
+          credits: data.credits || prev.credits,
+        }));
+      } else {
+        const error = await response.json();
+        alert(error.error || "Failed to fetch Wikipedia credits");
+      }
+    } catch (error) {
+      console.error("Error fetching Wikipedia credits:", error);
+      alert("Failed to fetch Wikipedia credits");
+    } finally {
+      setLoadingWikipediaCredits(false);
+    }
+  };
+
+  // Fetch other albums by the same artist
+  useEffect(() => {
+    const fetchOtherAlbums = async () => {
+      if (!formData.artist || !session?.user?.id) return;
+      
+      setLoadingOtherAlbums(true);
+      try {
+        const response = await fetch(`/api/vinyls?mode=public`);
+        if (response.ok) {
+          const allVinyls: Vinyl[] = await response.json();
+          // Filter albums by the same artist, excluding the current vinyl
+          const sameArtistAlbums = allVinyls
+            .filter(v => 
+              v.artist.toLowerCase() === formData.artist.toLowerCase() &&
+              (!vinyl || v.id !== vinyl.id)
+            )
+            .map(v => ({
+              id: v.id,
+              album: v.album,
+              albumArt: v.albumArt,
+            }))
+            .slice(0, 10); // Limit to 10 albums
+          
+          setOtherAlbums(sameArtistAlbums);
+        }
+      } catch (error) {
+        console.error("Error fetching other albums:", error);
+      } finally {
+        setLoadingOtherAlbums(false);
+      }
+    };
+
+    if (formData.artist && session?.user?.id) {
+      fetchOtherAlbums();
+    } else {
+      setOtherAlbums([]);
+    }
+  }, [formData.artist, vinyl, session?.user?.id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -369,6 +527,7 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false 
           rating: undefined,
           spotifyLink: "",
           trackList: data.trackList || undefined,
+          country: data.country || "",
         };
         return vinylData;
       } else {
@@ -404,6 +563,10 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false 
             ...prev,
             ...vinylData,
           }));
+          // Auto-fetch Wikipedia description if artist and album are available
+          if (vinylData.artist && vinylData.album) {
+            await autoFetchWikipediaDescription(vinylData.artist, vinylData.album);
+          }
         }
       }
     } finally {
@@ -552,6 +715,10 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false 
         ...prev,
         ...vinylData,
       }));
+      // Auto-fetch Wikipedia description if artist and album are available
+      if (vinylData.artist && vinylData.album) {
+        await autoFetchWikipediaDescription(vinylData.artist, vinylData.album);
+      }
     }
   };
 
@@ -890,35 +1057,95 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false 
                 />
               </div>
               {session?.user?.id && isOwner && (
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Condition
-                  </label>
-                  {isEditMode ? (
-                    <select
-                      name="condition"
-                      value={formData.condition}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Select condition</option>
-                      <option value="Mint">Mint</option>
-                      <option value="Near Mint">Near Mint</option>
-                      <option value="Very Good">Very Good</option>
-                      <option value="Good">Good</option>
-                      <option value="Fair">Fair</option>
-                      <option value="Poor">Poor</option>
-                    </select>
-                  ) : (
-                    <input
-                      type="text"
-                      value={formData.condition || "Not specified"}
-                      disabled
-                      readOnly
-                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
-                    />
-                  )}
-                </div>
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      Condition
+                    </label>
+                    {isEditMode ? (
+                      <select
+                        name="condition"
+                        value={formData.condition}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Select condition</option>
+                        <option value="Mint">Mint</option>
+                        <option value="Near Mint">Near Mint</option>
+                        <option value="Very Good">Very Good</option>
+                        <option value="Good">Good</option>
+                        <option value="Fair">Fair</option>
+                        <option value="Poor">Poor</option>
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        value={formData.condition || "Not specified"}
+                        disabled
+                        readOnly
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                      />
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      Purchase Price (in Euros)
+                    </label>
+                    {isEditMode ? (
+                      <input
+                        type="number"
+                        name="purchasePrice"
+                        value={formData.purchasePrice || ""}
+                        onChange={handleChange}
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    ) : (
+                      <input
+                        type="text"
+                        value={formData.purchasePrice ? `${formData.purchasePrice.toFixed(2)} €` : "Not specified"}
+                        disabled
+                        readOnly
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                      />
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      Date Added
+                    </label>
+                    {isEditMode ? (
+                      <input
+                        type="date"
+                        name="addedAt"
+                        value={formData.addedAt ? formData.addedAt.split('T')[0] : ""}
+                        onChange={(e) => {
+                          const dateValue = e.target.value;
+                          setFormData(prev => ({
+                            ...prev,
+                            addedAt: dateValue ? new Date(dateValue).toISOString() : ""
+                          }));
+                        }}
+                        max={new Date().toISOString().split("T")[0]}
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    ) : (
+                      <input
+                        type="text"
+                        value={formData.addedAt ? new Date(formData.addedAt).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric"
+                        }) : "Not specified"}
+                        disabled
+                        readOnly
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                      />
+                    )}
+                  </div>
+                </>
               )}
             </div>
             {isEditMode && (
@@ -1088,12 +1315,39 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false 
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Artist Bio
+                </label>
+                {isEditMode && (
+                  <button
+                    type="button"
+                    onClick={fetchWikipediaArtistBio}
+                    disabled={loadingWikipediaArtist || !formData.artist}
+                    className="text-xs px-3 py-1 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-200 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loadingWikipediaArtist ? "Loading..." : "Fetch from Wikipedia"}
+                  </button>
+                )}
+              </div>
+              <textarea
+                name="artistBio"
+                value={formData.artistBio}
+                onChange={handleChange}
+                rows={4}
+                disabled={!isEditMode}
+                readOnly={!isEditMode}
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                placeholder="Add artist bio or fetch from Wikipedia..."
+              />
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
                   Description
                 </label>
                 {isEditMode && (
                   <button
                     type="button"
-                    onClick={fetchWikipediaContent}
+                    onClick={() => fetchWikipediaContent(false)}
                     disabled={loadingWikipedia || !formData.artist || !formData.album}
                     className="text-xs px-3 py-1 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-200 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -1112,6 +1366,131 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false 
                 placeholder="Add notes or fetch from Wikipedia..."
               />
             </div>
+            {session?.user?.id && (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      Country of Origin
+                    </label>
+                    {isEditMode ? (
+                      <input
+                        type="text"
+                        name="country"
+                        value={formData.country}
+                        onChange={handleChange}
+                        placeholder="e.g., US, UK, France"
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    ) : (
+                      <input
+                        type="text"
+                        value={formData.country || "Not specified"}
+                        disabled
+                        readOnly
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                      />
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      Pressing Type
+                    </label>
+                    {isEditMode ? (
+                      <select
+                        name="pressingType"
+                        value={formData.pressingType || ""}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Select pressing type</option>
+                        <option value="original">Original Pressing</option>
+                        <option value="reissue">Reissue</option>
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        value={formData.pressingType === "original" ? "Original Pressing" : formData.pressingType === "reissue" ? "Reissue" : "Not specified"}
+                        disabled
+                        readOnly
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                      />
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                      Credits
+                    </label>
+                    {isEditMode && (
+                      <button
+                        type="button"
+                        onClick={fetchWikipediaCredits}
+                        disabled={loadingWikipediaCredits || !formData.artist || !formData.album}
+                        className="text-xs px-3 py-1 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-200 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {loadingWikipediaCredits ? "Loading..." : "Fetch from Wikipedia"}
+                      </button>
+                    )}
+                  </div>
+                  <textarea
+                    name="credits"
+                    value={formData.credits}
+                    onChange={handleChange}
+                    rows={4}
+                    disabled={!isEditMode}
+                    readOnly={!isEditMode}
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                    placeholder="Add album credits or fetch from Wikipedia..."
+                  />
+                </div>
+                {otherAlbums.length > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                      Other Albums by {formData.artist}
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                      {otherAlbums.map((album) => (
+                        <a
+                          key={album.id}
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (onSelectVinyl) {
+                              onSelectVinyl(album.id);
+                            } else {
+                              onCancel();
+                              router.push(`/?vinylId=${album.id}`);
+                            }
+                          }}
+                          className="group bg-slate-50 dark:bg-slate-900 rounded-lg p-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                        >
+                          <div className="aspect-square bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600 rounded overflow-hidden mb-2 relative">
+                            {album.albumArt ? (
+                              <Image
+                                src={album.albumArt}
+                                alt={album.album}
+                                fill
+                                className="object-cover"
+                                sizes="(max-width: 768px) 50vw, 25vw"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-slate-400 dark:text-slate-500 text-xs text-center p-2">
+                                No Cover
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-700 dark:text-slate-300 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                            {album.album}
+                          </p>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
             {(formData.trackList && formData.trackList.length > 0) || isEditMode ? (
               <div>
                 <div className="flex items-center justify-between mb-2">

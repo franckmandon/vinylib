@@ -258,7 +258,7 @@ export async function setVinylRating(vinylId: string, userId: string, rating: nu
 }
 
 export async function addVinyl(
-  vinyl: Omit<Vinyl, "id" | "createdAt" | "updatedAt" | "username" | "owners">,
+  vinyl: Omit<Vinyl, "id" | "createdAt" | "updatedAt" | "username" | "owners"> & { purchasePrice?: number; addedAt?: string },
   userId: string
 ): Promise<Vinyl> {
   // Get user to populate username
@@ -298,13 +298,14 @@ export async function addVinyl(
         }
       }
       
-      // Add the new owner with condition and notes
+      // Add the new owner with condition, notes, purchasePrice, and addedAt
       existingVinyl.owners.push({
         userId: user.id,
         username: user.username,
-        addedAt: new Date().toISOString(),
+        addedAt: (vinyl as any).addedAt || new Date().toISOString(),
         condition: vinyl.condition,
         notes: vinyl.notes,
+        purchasePrice: (vinyl as any).purchasePrice,
       });
       
       // Update the vinyl
@@ -324,9 +325,10 @@ export async function addVinyl(
     owners: [{
       userId: user.id,
       username: user.username,
-      addedAt: new Date().toISOString(),
+      addedAt: (vinyl as any).addedAt || new Date().toISOString(),
       condition: vinyl.condition,
       notes: vinyl.notes,
+      purchasePrice: (vinyl as any).purchasePrice,
     }],
     id: randomUUID(),
     createdAt: new Date().toISOString(),

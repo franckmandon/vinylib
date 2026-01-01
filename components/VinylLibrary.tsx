@@ -245,6 +245,23 @@ export default function VinylLibrary({ mode = "public", hideSearch = false, limi
     setEditingVinyl(null);
   };
 
+  const handleSelectVinyl = async (vinylId: string) => {
+    // Fetch the vinyl and open it
+    try {
+      const response = await fetch(`/api/vinyls?mode=public`);
+      if (response.ok) {
+        const allVinyls: Vinyl[] = await response.json();
+        const selectedVinyl = allVinyls.find(v => v.id === vinylId);
+        if (selectedVinyl) {
+          setEditingVinyl(selectedVinyl);
+          setShowForm(true);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching vinyl:", error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -327,7 +344,7 @@ export default function VinylLibrary({ mode = "public", hideSearch = false, limi
                 onClick={handleAddVinyl}
                 className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-md hover:shadow-lg whitespace-nowrap"
               >
-                + Add Vinyl
+                <strong>+ Add Vinyl</strong>
               </button>
             )}
           </div>
@@ -340,6 +357,7 @@ export default function VinylLibrary({ mode = "public", hideSearch = false, limi
           onSubmit={handleFormSubmit}
           onCancel={handleFormCancel}
           readOnly={editingVinyl !== null}
+          onSelectVinyl={handleSelectVinyl}
         />
       )}
 
