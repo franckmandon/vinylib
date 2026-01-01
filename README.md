@@ -8,7 +8,7 @@ Application web pour gérer votre collection de vinyles.
 - 🔍 Recherche et filtrage par genre
 - ⭐ Système de notation (1-5 étoiles)
 - 📅 Dates de sortie complètes
-- 🔗 Liens YouTube pour la découverte
+- 🔗 Liens Spotify pour la découverte
 - 📱 Scanner de code-barres (EAN/UPC) avec la caméra
 - 🔄 Récupération automatique des données depuis Discogs
 - 📝 Notes enrichies avec contenu Wikipedia

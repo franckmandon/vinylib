@@ -156,7 +156,7 @@ export default function BookmarksPage() {
           albumArt: vinyl.albumArt,
           ean: vinyl.ean,
           rating: vinyl.rating,
-          youtubeLink: vinyl.youtubeLink,
+          spotifyLink: vinyl.spotifyLink,
         }),
       });
 

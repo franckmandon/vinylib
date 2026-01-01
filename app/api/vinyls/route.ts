@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { getVinyls, addVinyl, updateVinyl, deleteVinyl, getPublicVinyls, getUserVinyls } from "@/lib/data";
+import { getVinyls, addVinyl, updateVinyl, deleteVinyl, getPublicVinyls, getUserVinyls, getUserById } from "@/lib/data";
 import { VinylFormData } from "@/types/vinyl";
 
 export const runtime = "nodejs";
@@ -69,7 +69,8 @@ export async function POST(request: NextRequest) {
       albumArt: data.albumArt,
       ean: data.ean,
       rating: data.rating,
-      youtubeLink: data.youtubeLink,
+      spotifyLink: data.spotifyLink,
+      trackList: data.trackList,
       userId: session.user.id,
     }, session.user.id);
 
@@ -124,7 +125,47 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const updatedVinyl = await updateVinyl(id, updates);
+    // Extract condition from updates and handle it separately
+    const { condition, ...otherUpdates } = updates;
+    
+    // Update condition in owners array for this user
+    if (condition !== undefined) {
+      if (!existingVinyl.owners) {
+        existingVinyl.owners = [];
+        // Add the original owner to the list if needed
+        if (existingVinyl.userId && existingVinyl.username) {
+          existingVinyl.owners.push({
+            userId: existingVinyl.userId,
+            username: existingVinyl.username,
+            addedAt: existingVinyl.createdAt,
+          });
+        }
+      }
+      
+      // Find or create owner entry for this user
+      const ownerIndex = existingVinyl.owners.findIndex(o => o.userId === session.user.id);
+      if (ownerIndex !== -1) {
+        existingVinyl.owners[ownerIndex].condition = condition || undefined;
+      } else {
+        // User should be in owners, but if not, add them
+        const user = await getUserById(session.user.id);
+        if (user) {
+          existingVinyl.owners.push({
+            userId: session.user.id,
+            username: user.username,
+            addedAt: new Date().toISOString(),
+            condition: condition || undefined,
+          });
+        }
+      }
+      
+      // Also update the vinyl's condition field for backward compatibility (only if user is primary owner)
+      if (existingVinyl.userId === session.user.id) {
+        otherUpdates.condition = condition;
+      }
+    }
+
+    const updatedVinyl = await updateVinyl(id, { ...otherUpdates, owners: existingVinyl.owners });
     
     if (!updatedVinyl) {
       return NextResponse.json(

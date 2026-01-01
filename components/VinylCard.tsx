@@ -139,15 +139,30 @@ export default function VinylCard({ vinyl, onEdit, onDelete, isLoggedIn = false,
     }
   };
 
-  const getYouTubeVideoId = (url?: string) => {
-    if (!url) return null;
-    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
-    return match ? match[1] : null;
+  const isValidSpotifyLink = (url?: string) => {
+    if (!url) return false;
+    return url.includes('open.spotify.com');
   };
 
-  const videoId = getYouTubeVideoId(vinyl.youtubeLink);
+  const hasSpotifyLink = isValidSpotifyLink(vinyl.spotifyLink);
+  
+  // Get user's condition from owners array (only if logged in and owner)
+  const getUserCondition = () => {
+    if (!isLoggedIn || !isOwner) return "";
+    if (vinyl.owners) {
+      const userOwner = vinyl.owners.find(o => o.userId === session?.user?.id);
+      return userOwner?.condition || "";
+    } else if (vinyl.userId === session?.user?.id) {
+      // Fallback to vinyl.condition for backward compatibility
+      return vinyl.condition || "";
+    }
+    return "";
+  };
+  
+  const userCondition = getUserCondition();
+  
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md hover:shadow-xl transition-shadow overflow-hidden">
+    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md hover:shadow-xl transition-shadow overflow-hidden flex flex-col h-full">
       <div className="aspect-square bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center">
         {vinyl.albumArt ? (
           <Image
@@ -177,7 +192,7 @@ export default function VinylCard({ vinyl, onEdit, onDelete, isLoggedIn = false,
           </div>
         )}
       </div>
-      <div className="p-4">
+      <div className="p-4 flex flex-col flex-1">
         <h3 className="font-semibold text-lg text-slate-900 dark:text-slate-100 mb-1 line-clamp-1">
           {vinyl.album}
         </h3>
@@ -225,20 +240,15 @@ export default function VinylCard({ vinyl, onEdit, onDelete, isLoggedIn = false,
               {vinyl.genre}
             </span>
           )}
-          {vinyl.condition && (
+          {userCondition && (
             <span className="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded text-slate-700 dark:text-slate-300">
-              {vinyl.condition}
+              {userCondition}
             </span>
           )}
         </div>
         {vinyl.label && (
           <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
-            {vinyl.label}
-          </p>
-        )}
-        {vinyl.ean && (
-          <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
-            EAN: {vinyl.ean}
+            <span className="font-bold">{vinyl.label}</span>
           </p>
         )}
         {(vinyl.owners && vinyl.owners.length > 0) ? (
@@ -295,26 +305,27 @@ export default function VinylCard({ vinyl, onEdit, onDelete, isLoggedIn = false,
             )}
           </p>
         ) : null}
-        {videoId && (
+        {hasSpotifyLink && (
           <div className="mb-3">
             <a
-              href={vinyl.youtubeLink}
+              href={vinyl.spotifyLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400 hover:underline"
+              className="flex items-center gap-2 text-xs hover:underline"
+              style={{ color: '#10d05b' }}
             >
               <svg
                 className="w-4 h-4"
                 fill="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.84-.179-.84-.66 0-.359.24-.66.54-.779 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.24 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.42 1.56-.299.421-1.02.599-1.559.3z"/>
               </svg>
-              Watch on YouTube
+              Listen on Spotify
             </a>
           </div>
         )}
-        <div className="flex gap-2">
+        <div className="flex gap-2 mt-auto">
           {customButtons ? (
             customButtons
           ) : (

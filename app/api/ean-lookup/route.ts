@@ -15,6 +15,7 @@ interface EANLookupResult {
   genre?: string;
   label?: string;
   releaseDate?: string;
+  trackList?: Array<{ position: string; title: string; duration?: string }>;
 }
 
 export async function GET(request: NextRequest) {
@@ -160,6 +161,16 @@ export async function GET(request: NextRequest) {
               const genre = (releaseDetails?.genres?.[0]) || (Array.isArray(release.genre) ? release.genre[0] : release.genre) || "";
               const label = releaseDetails?.labels?.[0]?.name || "";
               const releaseDate = releaseDetails?.released || (release.year ? release.year.toString() : "") || "";
+              
+              // Extract track list from Discogs
+              let trackList: Array<{ position: string; title: string; duration?: string }> | undefined = undefined;
+              if (releaseDetails?.tracklist && Array.isArray(releaseDetails.tracklist)) {
+                trackList = releaseDetails.tracklist.map((track: any) => ({
+                  position: track.position || "",
+                  title: track.title || "",
+                  duration: track.duration || undefined,
+                }));
+              }
 
               // If we have artist and album, use this result
               if (artist || album) {
@@ -173,6 +184,7 @@ export async function GET(request: NextRequest) {
                   genre: genre || undefined,
                   label: label || undefined,
                   releaseDate: releaseDate || undefined,
+                  trackList: trackList || undefined,
                 };
               }
             }

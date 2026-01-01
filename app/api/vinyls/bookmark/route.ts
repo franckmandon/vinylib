@@ -39,7 +39,8 @@ export async function POST(request: NextRequest) {
       albumArt: data.albumArt,
       ean: data.ean,
       rating: data.rating,
-      youtubeLink: data.youtubeLink,
+      spotifyLink: data.spotifyLink,
+      trackList: data.trackList,
     });
 
     return NextResponse.json(newVinyl, { status: 201 });

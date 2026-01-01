@@ -28,7 +28,7 @@ export async function sendWelcomeEmail(email: string, username: string) {
     const result = await resend.emails.send({
       from: fromEmail,
       to: email,
-      subject: "Welcome to Vinyl Report! 🎵",
+      subject: "Welcome to Vinyl Report!",
       html: `
         <!DOCTYPE html>
         <html>
@@ -37,8 +37,9 @@ export async function sendWelcomeEmail(email: string, username: string) {
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
           </head>
           <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-              <h1 style="color: white; margin: 0; font-size: 28px;">🎵 Welcome to Vinyl Report!</h1>
+            <div style="background: #0f172a; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+              <p style="color: rgba(255, 255, 255, 0.7); font-size: 12px; margin: 0 0 15px 0;">Vinyl Report - Your Vinyl Library Manager</p>
+              <h1 style="color: white; margin: 0; font-size: 28px;">Welcome to Vinyl Report!</h1>
             </div>
             <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
               <p style="font-size: 16px; margin-bottom: 20px;">
@@ -57,7 +58,7 @@ export async function sendWelcomeEmail(email: string, username: string) {
               </ul>
               <div style="text-align: center; margin: 30px 0;">
                 <a href="${process.env.NEXTAUTH_URL || "https://vinyl.report"}" 
-                   style="background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+                   style="background: rgb(37, 99, 235); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
                   Start Your Collection
                 </a>
               </div>
@@ -117,8 +118,9 @@ export async function sendPasswordResetEmail(email: string, username: string, re
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
           </head>
           <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-              <h1 style="color: white; margin: 0; font-size: 28px;">🔐 Réinitialisation du mot de passe</h1>
+            <div style="background: #0f172a; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+              <p style="color: rgba(255, 255, 255, 0.7); font-size: 12px; margin: 0 0 15px 0;">Vinyl Report - Your Vinyl Library Manager</p>
+              <h1 style="color: white; margin: 0; font-size: 28px;">Réinitialisation du mot de passe</h1>
             </div>
             <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
               <p style="font-size: 16px; margin-bottom: 20px;">
@@ -132,13 +134,13 @@ export async function sendPasswordResetEmail(email: string, username: string, re
               </p>
               <div style="text-align: center; margin: 30px 0;">
                 <a href="${resetUrl}" 
-                   style="background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+                   style="background: rgb(37, 99, 235); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
                   Réinitialiser mon mot de passe
                 </a>
               </div>
               <p style="font-size: 14px; color: #666; margin-bottom: 20px;">
                 Ou copiez-collez ce lien dans votre navigateur :<br>
-                <a href="${resetUrl}" style="color: #667eea; word-break: break-all;">${resetUrl}</a>
+                <a href="${resetUrl}" style="color: rgb(37, 99, 235); word-break: break-all;">${resetUrl}</a>
               </p>
               <p style="font-size: 14px; color: #666; margin-top: 30px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
                 Ce lien est valide pendant 1 heure.<br>

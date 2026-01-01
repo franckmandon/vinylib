@@ -29,7 +29,8 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false 
     albumArt: "",
     ean: "",
     rating: undefined,
-    youtubeLink: "",
+    spotifyLink: "",
+    trackList: undefined,
   });
   const [loading, setLoading] = useState(false);
   const [loadingWikipedia, setLoadingWikipedia] = useState(false);
@@ -38,23 +39,37 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false 
   const [isClient, setIsClient] = useState(false);
   const [showChoiceDialog, setShowChoiceDialog] = useState(false);
   const [scannedVinylData, setScannedVinylData] = useState<VinylFormData | null>(null);
+  const [isLoadingAfterScan, setIsLoadingAfterScan] = useState(false);
   const [userRating, setUserRating] = useState<number | undefined>(undefined);
   const [ratingInfo, setRatingInfo] = useState<{ average: number; count: number }>({ average: 0, count: 0 });
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [isToggling, setIsToggling] = useState(false);
 
   useEffect(() => {
     if (vinyl) {
+      // Get user's condition from owners array if available
+      let userCondition = "";
+      if (session?.user?.id && vinyl.owners) {
+        const userOwner = vinyl.owners.find(o => o.userId === session.user.id);
+        userCondition = userOwner?.condition || "";
+      } else if (session?.user?.id && vinyl.userId === session.user.id) {
+        // Fallback to vinyl.condition for backward compatibility
+        userCondition = vinyl.condition || "";
+      }
+      
       setFormData({
         artist: vinyl.artist,
         album: vinyl.album,
         releaseDate: vinyl.releaseDate || "",
         genre: vinyl.genre || "",
         label: vinyl.label || "",
-        condition: vinyl.condition || "",
+        condition: userCondition,
         notes: vinyl.notes || "",
         albumArt: vinyl.albumArt || "",
         ean: vinyl.ean || "",
         rating: vinyl.rating,
-        youtubeLink: vinyl.youtubeLink || "",
+        spotifyLink: vinyl.spotifyLink || "",
+        trackList: vinyl.trackList || undefined,
       });
       
       // Get user's rating and calculate average
@@ -79,6 +94,40 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false 
       }
     }
   }, [vinyl, session?.user?.id]);
+
+  // Check if user owns this vinyl
+  const isOwner = vinyl && session?.user?.id && (
+    vinyl.userId === session.user.id ||
+    vinyl.owners?.some(o => o.userId === session.user.id)
+  );
+
+  // Check if vinyl is bookmarked
+  useEffect(() => {
+    if (!vinyl?.id) {
+      setIsBookmarked(false);
+      return;
+    }
+
+    if (!session?.user?.id) {
+      // For non-logged in users, check localStorage
+      if (readOnly) {
+        const pendingBookmarks = JSON.parse(localStorage.getItem("pendingBookmarks") || "[]");
+        setIsBookmarked(pendingBookmarks.includes(vinyl.id));
+      } else {
+        setIsBookmarked(false);
+      }
+    } else {
+      // For logged in users, check API
+      if (readOnly && !isOwner) {
+        fetch(`/api/bookmarks/check?vinylId=${vinyl.id}`)
+          .then(res => res.json())
+          .then(data => setIsBookmarked(data.bookmarked))
+          .catch(() => setIsBookmarked(false));
+      } else {
+        setIsBookmarked(false);
+      }
+    }
+  }, [vinyl?.id, readOnly, session?.user?.id, isOwner]);
 
   const fetchWikipediaContent = async () => {
     if (!formData.artist || !formData.album) {
@@ -239,7 +288,8 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false 
           notes: data.description || "",
           albumArt: data.image || "",
           rating: undefined,
-          youtubeLink: "",
+          spotifyLink: "",
+          trackList: data.trackList || undefined,
         };
         return vinylData;
       } else {
@@ -259,20 +309,26 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false 
 
   const handleBarcodeScanned = async (ean: string) => {
     setShowScanner(false);
-    const vinylData = await lookupEAN(ean);
+    setIsLoadingAfterScan(true);
     
-    if (vinylData) {
-      // If we're adding a new vinyl (not editing), show choice dialog
-      if (!vinyl) {
-        setScannedVinylData(vinylData);
-        setShowChoiceDialog(true);
-      } else {
-        // If editing, just fill the form
-        setFormData((prev) => ({
-          ...prev,
-          ...vinylData,
-        }));
+    try {
+      const vinylData = await lookupEAN(ean);
+      
+      if (vinylData) {
+        // If we're adding a new vinyl (not editing), show choice dialog
+        if (!vinyl) {
+          setScannedVinylData(vinylData);
+          setShowChoiceDialog(true);
+        } else {
+          // If editing, just fill the form
+          setFormData((prev) => ({
+            ...prev,
+            ...vinylData,
+          }));
+        }
       }
+    } finally {
+      setIsLoadingAfterScan(false);
     }
   };
 
@@ -414,6 +470,59 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false 
     await lookupEAN(formData.ean);
   };
 
+  const handleBookmarkClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!vinyl?.id) return;
+    
+    if (!session?.user?.id) {
+      // Store or remove bookmark in localStorage for later sync
+      const pendingBookmarks = JSON.parse(localStorage.getItem("pendingBookmarks") || "[]");
+      if (pendingBookmarks.includes(vinyl.id)) {
+        // Remove from pending bookmarks
+        const updated = pendingBookmarks.filter((id: string) => id !== vinyl.id);
+        if (updated.length > 0) {
+          localStorage.setItem("pendingBookmarks", JSON.stringify(updated));
+        } else {
+          localStorage.removeItem("pendingBookmarks");
+        }
+        setIsBookmarked(false);
+      } else {
+        // Add to pending bookmarks
+        pendingBookmarks.push(vinyl.id);
+        localStorage.setItem("pendingBookmarks", JSON.stringify(pendingBookmarks));
+        setIsBookmarked(true);
+        router.push("/login");
+      }
+      return;
+    }
+
+    setIsToggling(true);
+    try {
+      if (isBookmarked) {
+        const response = await fetch(`/api/bookmarks?vinylId=${vinyl.id}`, {
+          method: "DELETE",
+        });
+        if (response.ok) {
+          setIsBookmarked(false);
+        }
+      } else {
+        const response = await fetch("/api/bookmarks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ vinylId: vinyl.id }),
+        });
+        if (response.ok) {
+          setIsBookmarked(true);
+        }
+      }
+    } catch (error) {
+      console.error("Error toggling bookmark:", error);
+    } finally {
+      setIsToggling(false);
+    }
+  };
+
   return (
     <React.Fragment>
       {showScanner && isClient && (
@@ -421,6 +530,19 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false 
           onScanSuccess={handleBarcodeScanned}
           onClose={() => setShowScanner(false)}
         />
+      )}
+      {isLoadingAfterScan && !showChoiceDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-[100]">
+          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-md w-full p-8 flex flex-col items-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+            <p className="text-lg font-medium text-slate-900 dark:text-slate-100">
+              Fetching vinyl information...
+            </p>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
+              Please wait while we retrieve the album details
+            </p>
+          </div>
+        </div>
       )}
       {showChoiceDialog && scannedVinylData && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-[100]">
@@ -502,28 +624,17 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false 
           <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 pr-8">
             {readOnly ? "Vinyl Details" : vinyl ? "Edit Vinyl" : "Add New Vinyl"}
           </h2>
-          {vinyl && (
-            <div className="mb-4 p-3 bg-slate-100 dark:bg-slate-700 rounded-lg">
-              {vinyl.owners && vinyl.owners.length > 0 ? (
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  {vinyl.owners.length === 1 ? (
-                    <>Owned by <span className="font-semibold text-slate-900 dark:text-slate-100">{vinyl.owners[0].username}</span></>
-                  ) : (
-                    <>
-                      Owned by {vinyl.owners.map((o, idx) => (
-                        <span key={o.userId}>
-                          <span className="font-semibold text-slate-900 dark:text-slate-100">{o.username}</span>
-                          {idx < vinyl.owners!.length - 1 && ", "}
-                        </span>
-                      ))} ({vinyl.owners.length} owners)
-                    </>
-                  )}
-                </p>
-              ) : vinyl.username ? (
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  Owned by <span className="font-semibold text-slate-900 dark:text-slate-100">{vinyl.username}</span>
-                </p>
-              ) : null}
+          {formData.albumArt && (
+            <div className="mb-6 flex justify-center">
+              <div className="relative w-64 h-64 rounded-lg overflow-hidden shadow-lg">
+                <Image
+                  src={formData.albumArt}
+                  alt={`${formData.artist} - ${formData.album}`}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+              </div>
             </div>
           )}
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -676,91 +787,163 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false 
                   className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Condition
-                </label>
-                <select
-                  name="condition"
-                  value={formData.condition}
-                  onChange={handleChange}
-                  disabled={readOnly}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  <option value="">Select condition</option>
-                  <option value="Mint">Mint</option>
-                  <option value="Near Mint">Near Mint</option>
-                  <option value="Very Good">Very Good</option>
-                  <option value="Good">Good</option>
-                  <option value="Fair">Fair</option>
-                  <option value="Poor">Poor</option>
-                </select>
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                Album Art URL
-              </label>
-              <input
-                type="url"
-                name="albumArt"
-                value={formData.albumArt}
-                onChange={handleChange}
-                placeholder="https://example.com/album-cover.jpg"
-                disabled={readOnly}
-                readOnly={readOnly}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                Rating
-              </label>
-              {readOnly && ratingInfo.count > 0 ? (
+              {!readOnly && (
                 <div>
-                  <StarRating
-                    rating={ratingInfo.average}
-                    readonly={true}
-                    size="lg"
-                    reviewCount={ratingInfo.count}
-                  />
-                  {session?.user?.id && (
-                    <div className="mt-2">
-                      <p className="text-xs text-slate-600 dark:text-slate-400 mb-1">Your rating:</p>
-                      <StarRating
-                        rating={userRating || 0}
-                        onRatingChange={handleRatingChange}
-                        size="md"
-                        readonly={false}
-                      />
-                    </div>
-                  )}
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Condition
+                  </label>
+                  <select
+                    name="condition"
+                    value={formData.condition}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select condition</option>
+                    <option value="Mint">Mint</option>
+                    <option value="Near Mint">Near Mint</option>
+                    <option value="Very Good">Very Good</option>
+                    <option value="Good">Good</option>
+                    <option value="Fair">Fair</option>
+                    <option value="Poor">Poor</option>
+                  </select>
                 </div>
-              ) : (
-                <StarRating
-                  rating={userRating || formData.rating || 0}
-                  onRatingChange={readOnly ? undefined : handleRatingChange}
-                  size="lg"
-                  readonly={readOnly}
-                  reviewCount={ratingInfo.count > 0 ? ratingInfo.count : undefined}
-                />
               )}
             </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                YouTube Link
-              </label>
-              <input
-                type="url"
-                name="youtubeLink"
-                value={formData.youtubeLink}
-                onChange={handleChange}
-                placeholder="https://www.youtube.com/watch?v=..."
-                disabled={readOnly}
-                readOnly={readOnly}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
-              />
-            </div>
+            {!readOnly && (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Album Art URL
+                </label>
+                <input
+                  type="url"
+                  name="albumArt"
+                  value={formData.albumArt}
+                  onChange={handleChange}
+                  placeholder="https://example.com/album-cover.jpg"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            )}
+            {readOnly && !session?.user?.id ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Rating
+                  </label>
+                  {ratingInfo.count > 0 ? (
+                    <StarRating
+                      rating={ratingInfo.average}
+                      readonly={true}
+                      size="lg"
+                      reviewCount={ratingInfo.count}
+                    />
+                  ) : (
+                    <p className="text-sm text-slate-500 dark:text-slate-400">No ratings yet</p>
+                  )}
+                </div>
+                {formData.spotifyLink && formData.spotifyLink.includes('open.spotify.com') && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      Spotify Link
+                    </label>
+                    <a
+                      href={formData.spotifyLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm hover:underline"
+                      style={{ color: '#10d05b' }}
+                    >
+                      <svg
+                        className="w-5 h-5"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.84-.179-.84-.66 0-.359.24-.66.54-.779 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.24 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.42 1.56-.299.421-1.02.599-1.559.3z"/>
+                      </svg>
+                      Listen on Spotify
+                    </a>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Rating
+                  </label>
+                  {readOnly && ratingInfo.count > 0 ? (
+                    <div>
+                      <StarRating
+                        rating={ratingInfo.average}
+                        readonly={true}
+                        size="lg"
+                        reviewCount={ratingInfo.count}
+                      />
+                      {session?.user?.id && (
+                        <div className="mt-2">
+                          <p className="text-xs text-slate-600 dark:text-slate-400 mb-1">Your rating:</p>
+                          <StarRating
+                            rating={userRating || 0}
+                            onRatingChange={handleRatingChange}
+                            size="md"
+                            readonly={false}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <StarRating
+                      rating={userRating || formData.rating || 0}
+                      onRatingChange={readOnly ? undefined : handleRatingChange}
+                      size="lg"
+                      readonly={readOnly}
+                      reviewCount={ratingInfo.count > 0 ? ratingInfo.count : undefined}
+                    />
+                  )}
+                </div>
+                <div>
+                  {readOnly ? (
+                    formData.spotifyLink && formData.spotifyLink.includes('open.spotify.com') ? (
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                          Spotify Link
+                        </label>
+                        <a
+                          href={formData.spotifyLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-sm hover:underline"
+                          style={{ color: '#10d05b' }}
+                        >
+                          <svg
+                            className="w-5 h-5"
+                            fill="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.84-.179-.84-.66 0-.359.24-.66.54-.779 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.24 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.42 1.56-.299.421-1.02.599-1.559.3z"/>
+                          </svg>
+                          Listen on Spotify
+                        </a>
+                      </div>
+                    ) : null
+                  ) : (
+                    <>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                        Spotify Link
+                      </label>
+                      <input
+                        type="url"
+                        name="spotifyLink"
+                        value={formData.spotifyLink}
+                        onChange={handleChange}
+                        placeholder="https://open.spotify.com/album/..."
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </>
+                  )}
+                </div>
+              </>
+            )}
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -788,7 +971,57 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false 
                 placeholder="Add notes or fetch from Wikipedia..."
               />
             </div>
-            <div className="flex gap-3 pt-4">
+            {formData.trackList && formData.trackList.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Track List
+                </label>
+                <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+                  <div className="space-y-2">
+                    {formData.trackList.map((track, index) => (
+                      <div key={index} className="flex items-start gap-3 text-sm">
+                        <span className="font-medium text-slate-600 dark:text-slate-400 min-w-[3rem]">
+                          {track.position}
+                        </span>
+                        <span className="flex-1 text-slate-900 dark:text-slate-100">
+                          {track.title}
+                        </span>
+                        {track.duration && (
+                          <span className="text-slate-500 dark:text-slate-400 min-w-[3rem] text-right">
+                            {track.duration}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+            {vinyl && ((vinyl.owners && vinyl.owners.length > 0) || vinyl.username) && (
+              <div className="p-3 bg-slate-100 dark:bg-slate-700 rounded-lg">
+                {vinyl.owners && vinyl.owners.length > 0 ? (
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    {vinyl.owners.length === 1 ? (
+                      <>Owned by <span className="font-semibold text-slate-900 dark:text-slate-100">{vinyl.owners[0].username}</span></>
+                    ) : (
+                      <>
+                        Owned by {vinyl.owners.map((o, idx) => (
+                          <span key={o.userId}>
+                            <span className="font-semibold text-slate-900 dark:text-slate-100">{o.username}</span>
+                            {idx < vinyl.owners!.length - 1 && ", "}
+                          </span>
+                        ))} ({vinyl.owners.length} owners)
+                      </>
+                    )}
+                  </p>
+                ) : vinyl.username ? (
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    Owned by <span className="font-semibold text-slate-900 dark:text-slate-100">{vinyl.username}</span>
+                  </p>
+                ) : null}
+              </div>
+            )}
+            <div className="flex gap-3 pt-4 items-center">
               {!readOnly && (
                 <button
                   type="submit"
@@ -798,13 +1031,50 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false 
                   {loading ? "Saving..." : vinyl ? "Update" : "Add Vinyl"}
                 </button>
               )}
-              <button
-                type="button"
-                onClick={onCancel}
-                className={`${readOnly ? 'w-full' : 'flex-1'} px-4 py-2 bg-slate-300 dark:bg-slate-600 hover:bg-slate-400 dark:hover:bg-slate-500 text-slate-900 dark:text-slate-100 rounded-lg font-medium transition-colors`}
-              >
-                {readOnly ? "Close" : "Cancel"}
-              </button>
+              {readOnly && vinyl?.id && !isOwner ? (
+                <div className="flex-1 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={onCancel}
+                    className="flex-1 px-4 py-2 bg-slate-300 dark:bg-slate-600 hover:bg-slate-400 dark:hover:bg-slate-500 text-slate-900 dark:text-slate-100 rounded-lg font-medium transition-colors"
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleBookmarkClick}
+                    disabled={isToggling}
+                    className={`p-2 rounded transition-colors ${
+                      isBookmarked
+                        ? "bg-yellow-500 hover:bg-yellow-600 text-white"
+                        : "bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300"
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    title={isBookmarked ? "Remove from bookmarks" : "Add to bookmarks"}
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill={isBookmarked ? "currentColor" : "none"}
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onCancel}
+                  className={`${readOnly ? 'w-full' : 'flex-1'} px-4 py-2 bg-slate-300 dark:bg-slate-600 hover:bg-slate-400 dark:hover:bg-slate-500 text-slate-900 dark:text-slate-100 rounded-lg font-medium transition-colors`}
+                >
+                  {readOnly ? "Close" : "Cancel"}
+                </button>
+              )}
             </div>
           </form>
         </div>
