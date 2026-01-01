@@ -203,7 +203,7 @@ export default function BookmarksPage() {
                   Vinyl Report
                 </h1>
               </Link>
-              <p className="text-slate-600 dark:text-slate-400">
+              <p className="text-slate-600 dark:text-slate-400 text-[1.4rem]">
                 My Bookmarks
               </p>
             </div>
@@ -235,7 +235,7 @@ export default function BookmarksPage() {
                   href="/register"
                   className="px-2 py-1.5 sm:px-4 sm:py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 rounded-lg text-xs sm:text-sm font-medium transition-colors"
                 >
-                  Sign Up
+                  Create an account
                 </Link>
               </div>
             )}

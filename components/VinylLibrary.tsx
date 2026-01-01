@@ -12,9 +12,11 @@ import Link from "next/link";
 
 interface VinylLibraryProps {
   mode?: "public" | "personal"; // "public" shows all vinyls, "personal" shows user's vinyls
+  hideSearch?: boolean; // Hide search bar, filters, and add button
+  limit?: number; // Limit the number of vinyls displayed
 }
 
-export default function VinylLibrary({ mode = "public" }: VinylLibraryProps) {
+export default function VinylLibrary({ mode = "public", hideSearch = false, limit }: VinylLibraryProps) {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [vinyls, setVinyls] = useState<Vinyl[]>([]);
@@ -28,6 +30,8 @@ export default function VinylLibrary({ mode = "public" }: VinylLibraryProps) {
   const [selectedGenre, setSelectedGenre] = useState("");
   const [filterByOwner, setFilterByOwner] = useState<{ username: string; userId: string } | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
   
   const isLoggedIn = !!(status === "authenticated" && session?.user);
   const isPersonalMode = mode === "personal";
@@ -73,33 +77,49 @@ export default function VinylLibrary({ mode = "public" }: VinylLibraryProps) {
     }
 
     // Sort
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case "artist":
-          return a.artist.localeCompare(b.artist);
-        case "album":
-          return a.album.localeCompare(b.album);
-        case "releaseDate":
-          const dateA = a.releaseDate ? new Date(a.releaseDate).getTime() : 0;
-          const dateB = b.releaseDate ? new Date(b.releaseDate).getTime() : 0;
-          return dateB - dateA; // Newest first
-        case "rating":
-          // Calculate average rating for comparison
-          const getAvgRating = (v: Vinyl) => {
-            if (v.ratings && v.ratings.length > 0) {
-              const sum = v.ratings.reduce((acc, r) => acc + r.rating, 0);
-              return sum / v.ratings.length;
-            }
-            return v.rating || 0;
-          };
-          return getAvgRating(b) - getAvgRating(a); // Highest first
-        default:
-          return 0;
-      }
-    });
+    if (limit) {
+      // When limit is set, always sort by most recent first
+      filtered.sort((a, b) => {
+        const dateA = new Date(a.createdAt || a.updatedAt || 0).getTime();
+        const dateB = new Date(b.createdAt || b.updatedAt || 0).getTime();
+        return dateB - dateA; // Newest first
+      });
+    } else {
+      filtered.sort((a, b) => {
+        switch (sortBy) {
+          case "artist":
+            return a.artist.localeCompare(b.artist);
+          case "album":
+            return a.album.localeCompare(b.album);
+          case "releaseDate":
+            const dateA = a.releaseDate ? new Date(a.releaseDate).getTime() : 0;
+            const dateB = b.releaseDate ? new Date(b.releaseDate).getTime() : 0;
+            return dateB - dateA; // Newest first
+          case "rating":
+            // Calculate average rating for comparison
+            const getAvgRating = (v: Vinyl) => {
+              if (v.ratings && v.ratings.length > 0) {
+                const sum = v.ratings.reduce((acc, r) => acc + r.rating, 0);
+                return sum / v.ratings.length;
+              }
+              return v.rating || 0;
+            };
+            return getAvgRating(b) - getAvgRating(a); // Highest first
+          default:
+            return 0;
+        }
+      });
+    }
 
-    setFilteredVinyls(filtered);
-  }, [vinyls, searchQuery, sortBy, selectedGenre, filterByOwner]);
+    // Apply limit if specified (for homepage)
+    if (limit) {
+      const limitedVinyls = filtered.slice(0, limit);
+      setFilteredVinyls(limitedVinyls);
+    } else {
+      // For pagination, we'll slice in the render
+      setFilteredVinyls(filtered);
+    }
+  }, [vinyls, searchQuery, sortBy, selectedGenre, filterByOwner, limit]);
 
   useEffect(() => {
     fetchVinyls();
@@ -117,6 +137,11 @@ export default function VinylLibrary({ mode = "public" }: VinylLibraryProps) {
   useEffect(() => {
     filterAndSortVinyls();
   }, [filterAndSortVinyls]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, sortBy, selectedGenre, filterByOwner]);
 
   const getAvailableGenres = (): string[] => {
     const genres = new Set<string>();
@@ -212,6 +237,13 @@ export default function VinylLibrary({ mode = "public" }: VinylLibraryProps) {
     );
   }
 
+  // Pagination logic
+  const shouldPaginate = isLoggedIn && !hideSearch && !limit;
+  const totalPages = shouldPaginate ? Math.ceil(filteredVinyls.length / itemsPerPage) : 1;
+  const startIndex = shouldPaginate ? (currentPage - 1) * itemsPerPage : 0;
+  const endIndex = shouldPaginate ? startIndex + itemsPerPage : filteredVinyls.length;
+  const paginatedVinyls = filteredVinyls.slice(startIndex, endIndex);
+
   return (
     <div>
       {filterByOwner && (
@@ -233,56 +265,58 @@ export default function VinylLibrary({ mode = "public" }: VinylLibraryProps) {
           </button>
         </div>
       )}
-      <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-        <SearchBar
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          sortBy={sortBy}
-          onSortChange={setSortBy}
-          selectedGenre={selectedGenre}
-          onGenreChange={setSelectedGenre}
-          availableGenres={getAvailableGenres()}
-        />
-        <div className="flex items-center gap-2">
-          {/* View Mode Toggle */}
-          <div className="flex items-center gap-1 rounded-lg p-1">
-            <button
-              onClick={() => setViewMode("grid")}
-              className={`p-2 rounded transition-colors ${
-                viewMode === "grid"
-                  ? "bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
-              }`}
-              aria-label="Grid view"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-              </svg>
-            </button>
-            <button
-              onClick={() => setViewMode("list")}
-              className={`p-2 rounded transition-colors ${
-                viewMode === "list"
-                  ? "bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
-              }`}
-              aria-label="List view"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
+      {!hideSearch && (
+        <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+          <SearchBar
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
+            selectedGenre={selectedGenre}
+            onGenreChange={setSelectedGenre}
+            availableGenres={getAvailableGenres()}
+          />
+          <div className="flex items-center gap-2">
+            {/* View Mode Toggle */}
+            <div className="flex items-center gap-1 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode("grid")}
+                className={`p-2 rounded transition-colors ${
+                  viewMode === "grid"
+                    ? "bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+                }`}
+                aria-label="Grid view"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+              </button>
+              <button
+                onClick={() => setViewMode("list")}
+                className={`p-2 rounded transition-colors ${
+                  viewMode === "list"
+                    ? "bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+                }`}
+                aria-label="List view"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            </div>
+            {!filterByOwner && (
+              <button
+                onClick={handleAddVinyl}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-md hover:shadow-lg whitespace-nowrap"
+              >
+                + Add Vinyl
+              </button>
+            )}
           </div>
-          {!filterByOwner && (
-            <button
-              onClick={handleAddVinyl}
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-md hover:shadow-lg whitespace-nowrap"
-            >
-              + Add Vinyl
-            </button>
-          )}
         </div>
-      </div>
+      )}
 
       {showForm && (
         <VinylForm
@@ -293,15 +327,15 @@ export default function VinylLibrary({ mode = "public" }: VinylLibraryProps) {
         />
       )}
 
-      {filteredVinyls.length === 0 ? (
+      {paginatedVinyls.length === 0 ? (
         <div className="text-center py-12 text-slate-600 dark:text-slate-400">
           {vinyls.length === 0
             ? "Your vinyl library is empty. Add your first record!"
             : "No vinyls match your search."}
         </div>
-      ) : viewMode === "grid" ? (
+      ) : (hideSearch || viewMode === "grid") ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredVinyls.map((vinyl) => {
+          {paginatedVinyls.map((vinyl) => {
             const ownsVinyl = isLoggedIn && session?.user?.id && (
               vinyl.userId === session.user.id || 
               vinyl.owners?.some(o => o.userId === session.user.id)
@@ -336,7 +370,7 @@ export default function VinylLibrary({ mode = "public" }: VinylLibraryProps) {
               </tr>
             </thead>
             <tbody>
-              {filteredVinyls.map((vinyl) => {
+              {paginatedVinyls.map((vinyl) => {
                 const ownsVinyl = isLoggedIn && session?.user?.id && (
                   vinyl.userId === session.user.id || 
                   vinyl.owners?.some(o => o.userId === session.user.id)
@@ -361,9 +395,94 @@ export default function VinylLibrary({ mode = "public" }: VinylLibraryProps) {
         </div>
       )}
 
-      {filteredVinyls.length > 0 && (
-        <div className="mt-8 text-center text-sm text-slate-600 dark:text-slate-400">
-          Showing {filteredVinyls.length} of {vinyls.length} vinyls
+      {filteredVinyls.length > 0 && !hideSearch && (
+        <div className="mt-8">
+          <div className="text-center text-sm text-slate-600 dark:text-slate-400 mb-4">
+            Showing {shouldPaginate ? `${startIndex + 1}-${Math.min(endIndex, filteredVinyls.length)}` : filteredVinyls.length} of {filteredVinyls.length} vinyls
+            {filteredVinyls.length !== vinyls.length && ` (${vinyls.length} total)`}
+          </div>
+          
+          {/* Pagination controls */}
+          {shouldPaginate && totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-4">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Previous
+              </button>
+              
+              <div className="flex items-center gap-1">
+                {(() => {
+                  const pages: (number | string)[] = [];
+                  
+                  if (totalPages <= 7) {
+                    // Show all pages if 7 or fewer
+                    for (let i = 1; i <= totalPages; i++) {
+                      pages.push(i);
+                    }
+                  } else {
+                    // Always show first page
+                    pages.push(1);
+                    
+                    // Add ellipsis if current page is far from start
+                    if (currentPage > 3) {
+                      pages.push('...');
+                    }
+                    
+                    // Add pages around current
+                    const start = Math.max(2, currentPage - 1);
+                    const end = Math.min(totalPages - 1, currentPage + 1);
+                    for (let i = start; i <= end; i++) {
+                      if (i !== 1 && i !== totalPages) {
+                        pages.push(i);
+                      }
+                    }
+                    
+                    // Add ellipsis if current page is far from end
+                    if (currentPage < totalPages - 2) {
+                      pages.push('...');
+                    }
+                    
+                    // Always show last page
+                    pages.push(totalPages);
+                  }
+                  
+                  return pages.map((page, index) => {
+                    if (typeof page === 'string') {
+                      return (
+                        <span key={`ellipsis-${index}`} className="px-2 text-slate-500 dark:text-slate-400">
+                          ...
+                        </span>
+                      );
+                    }
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`px-3 py-2 rounded-lg transition-colors ${
+                          currentPage === page
+                            ? "bg-blue-600 text-white"
+                            : "bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    );
+                  });
+                })()}
+              </div>
+              
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
