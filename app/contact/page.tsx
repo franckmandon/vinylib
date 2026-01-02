@@ -66,7 +66,7 @@ export default function ContactPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex flex-col items-center justify-center p-4">
       <div className="text-center mb-6">
         <Link href="/" className="hover:opacity-80 transition-opacity inline-block">
-          <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+          <h1 className="font-bold text-slate-900 dark:text-slate-100 mb-1" style={{ fontSize: '3rem' }}>
             Vinyl Report
           </h1>
         </Link>

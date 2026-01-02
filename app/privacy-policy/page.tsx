@@ -46,53 +46,54 @@ export default function PrivacyPolicyPage() {
               </Link>
             </div>
           )}
-          {/* Title section */}
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-            <div>
-              <Link href="/" className="hover:opacity-80 transition-opacity">
-                <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-2">
-                  Vinyl Report
-                </h1>
+
+          {/* Desktop: Browse All, UserMenu, Sign Out - top right (logged users) */}
+          {session?.user && (
+            <div className="hidden md:flex items-center justify-end gap-3 mb-4">
+              <Link
+                href="/"
+                className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+              >
+                Browse All
               </Link>
-              <p className="text-slate-600 dark:text-slate-400 text-[1.4rem]">
-                Mind the wax
-              </p>
+              <UserMenu />
+              <button
+                onClick={() => signOut({ callbackUrl: "/" })}
+                className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 rounded-lg text-sm font-medium transition-colors"
+              >
+                Sign Out
+              </button>
             </div>
-            {/* Desktop: Browse All, UserMenu, Sign Out on the right for logged users */}
-            {session?.user && (
-              <div className="hidden md:flex items-center gap-3">
-                <Link
-                  href="/"
-                  className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
-                >
-                  Browse All
-                </Link>
-                <UserMenu />
-                <button
-                  onClick={() => signOut({ callbackUrl: "/" })}
-                  className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 rounded-lg text-sm font-medium transition-colors"
-                >
-                  Sign Out
-                </button>
-              </div>
-            )}
-            {/* Desktop: Sign In/Create account on the right for non-logged users */}
-            {!session?.user && (
-              <div className="hidden md:flex gap-2">
-                <Link
-                  href="/login"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  href="/register"
-                  className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 rounded-lg text-sm font-medium transition-colors"
-                >
-                  Create an account
-                </Link>
-              </div>
-            )}
+          )}
+
+          {/* Desktop: Sign In/Create account above title for non-logged users */}
+          {!session?.user && (
+            <div className="hidden md:flex items-center justify-end gap-2 mb-4">
+              <Link
+                href="/login"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/register"
+                className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 rounded-lg text-sm font-medium transition-colors"
+              >
+                Create an account
+              </Link>
+            </div>
+          )}
+
+          {/* Title section - centered */}
+          <div className="text-center">
+            <Link href="/" className="hover:opacity-80 transition-opacity">
+              <h1 className="font-bold text-slate-900 dark:text-slate-100 mb-1" style={{ fontSize: '3rem' }}>
+                Vinyl Report
+              </h1>
+            </Link>
+            <p className="text-slate-600 dark:text-slate-400 text-[1.4rem]">
+              Privacy Policy
+            </p>
           </div>
         </header>
 

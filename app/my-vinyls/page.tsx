@@ -136,7 +136,7 @@ export default function MyVinylsPage() {
             <div className="flex-1 min-w-0">
             {/* Ligne 1: Vinyl Report */}
             <Link href="/" className="hover:opacity-80 transition-opacity">
-              <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+              <h1 className="font-bold text-slate-900 dark:text-slate-100 mb-1" style={{ fontSize: '3rem' }}>
                 Vinyl Report
               </h1>
             </Link>

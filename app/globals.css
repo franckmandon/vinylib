@@ -24,6 +24,10 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+  
+  .mb-16 {
+    margin-bottom: 6rem;
+  }
 }
 
 /* Calendar picker icon color */
