@@ -708,6 +708,46 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
     }
   };
 
+  const handleShare = () => {
+    if (!vinyl?.id) return;
+    
+    const shareUrl = `${window.location.origin}/?vinylId=${vinyl.id}`;
+    
+    if (navigator.share) {
+      navigator.share({
+        title: `${vinyl.artist} - ${vinyl.album}`,
+        text: `Check out ${vinyl.artist} - ${vinyl.album} on Vinyl Report!`,
+        url: shareUrl,
+      }).catch((error) => {
+        console.error("Error sharing:", error);
+        copyToClipboard(shareUrl);
+      });
+    } else {
+      copyToClipboard(shareUrl);
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      alert("Link copied to clipboard!");
+    }).catch(() => {
+      // Fallback for older browsers
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.opacity = "0";
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand("copy");
+        alert("Link copied to clipboard!");
+      } catch (err) {
+        alert("Failed to copy link. Please copy manually: " + text);
+      }
+      document.body.removeChild(textArea);
+    });
+  };
+
   const handleBookmarkClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     
@@ -1630,7 +1670,7 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                   {/* Mode lecture */}
                   {readOnly && !isEditMode && (
                     <>
-                      {/* Utilisateur connecté ET propriétaire : Edit + Close */}
+                      {/* Utilisateur connecté ET propriétaire : Edit + Close + Share */}
                       {session?.user?.id && isOwner && (
                         <>
                           <button
@@ -1647,9 +1687,31 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                           >
                             Close
                           </button>
+                          <button
+                            type="button"
+                            onClick={handleShare}
+                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                            title="Share this vinyl"
+                            aria-label="Share this vinyl"
+                          >
+                            <svg
+                              className="w-6 h-6"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                              style={{ color: 'rgb(37 99 235)' }}
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                              />
+                            </svg>
+                          </button>
                         </>
                       )}
-                      {/* Utilisateur connecté MAIS NON propriétaire : Close + Bookmark */}
+                      {/* Utilisateur connecté MAIS NON propriétaire : Close + Share + Bookmark */}
                       {session?.user?.id && !isOwner && vinyl?.id && (
                         <div className="flex-1 flex items-center gap-2">
                           <button
@@ -1658,6 +1720,28 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                             className="flex-1 px-4 py-2 bg-slate-300 dark:bg-slate-600 hover:bg-slate-400 dark:hover:bg-slate-500 text-slate-900 dark:text-slate-100 rounded-lg font-medium transition-colors"
                           >
                             Close
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleShare}
+                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                            title="Share this vinyl"
+                            aria-label="Share this vinyl"
+                          >
+                            <svg
+                              className="w-6 h-6"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                              style={{ color: 'rgb(37 99 235)' }}
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                              />
+                            </svg>
                           </button>
                           <button
                             type="button"

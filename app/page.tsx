@@ -16,6 +16,15 @@ function HomeContent() {
   useEffect(() => {
     const owner = searchParams.get("owner");
     const ownerId = searchParams.get("ownerId");
+    const vinylId = searchParams.get("vinylId");
+    
+    // If there's a shared vinyl link (vinylId) and user is not logged in
+    if (vinylId && status === "unauthenticated") {
+      // Redirect to login with the vinylId parameter to preserve it
+      const loginUrl = `/login?vinylId=${encodeURIComponent(vinylId)}`;
+      router.push(loginUrl);
+      return;
+    }
     
     // If there's a shared collection link (owner params) and user is not logged in
     if (owner && ownerId && status === "unauthenticated") {

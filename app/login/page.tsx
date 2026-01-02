@@ -29,6 +29,12 @@ function LoginForm() {
   // Redirect if already logged in
   useEffect(() => {
     if (status === "authenticated" && session) {
+      // Preserve vinylId param if it exists
+      const vinylId = searchParams.get("vinylId");
+      if (vinylId) {
+        router.push(`/?vinylId=${encodeURIComponent(vinylId)}`);
+        return;
+      }
       // Preserve owner/ownerId params if they exist
       const owner = searchParams.get("owner");
       const ownerId = searchParams.get("ownerId");

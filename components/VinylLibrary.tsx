@@ -36,7 +36,7 @@ export default function VinylLibrary({ mode = "public", hideSearch = false, limi
   const isLoggedIn = !!(status === "authenticated" && session?.user);
   const isPersonalMode = mode === "personal";
 
-  // Read owner filter from URL params
+  // Read owner filter and vinylId from URL params
   useEffect(() => {
     const ownerUsername = searchParams.get("owner");
     const ownerUserId = searchParams.get("ownerId");
@@ -45,7 +45,14 @@ export default function VinylLibrary({ mode = "public", hideSearch = false, limi
     } else {
       setFilterByOwner(null);
     }
-  }, [searchParams]);
+    
+    // Check for vinylId parameter to open vinyl detail
+    const vinylId = searchParams.get("vinylId");
+    if (vinylId && isLoggedIn) {
+      handleSelectVinyl(vinylId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, isLoggedIn]);
 
   const filterAndSortVinyls = useCallback(() => {
     let filtered = [...vinyls];
