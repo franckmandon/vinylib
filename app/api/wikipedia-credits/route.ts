@@ -67,17 +67,19 @@ export async function GET(request: NextRequest) {
             let personnelSection = "";
             
             // Look for section with id containing "Personnel" or "personnel"
-            const personnelIdMatch = html.match(/<h[23][^>]*id="[^"]*[Pp]ersonnel[^"]*"[^>]*>([\s\S]*?)(?=<h[123]|$)/i);
+            // Capture until next h2 (main section) to include all subsections (h3, h4, etc.)
+            const personnelIdMatch = html.match(/<h[23][^>]*id="[^"]*[Pp]ersonnel[^"]*"[^>]*>([\s\S]*?)(?=<h2|$)/i);
             if (personnelIdMatch) {
               personnelSection = personnelIdMatch[0];
             } else {
               // Look for section with class or data attributes containing "Personnel"
-              const personnelClassMatch = html.match(/<h[23][^>]*(?:class|data-section)[^>]*[Pp]ersonnel[^>]*>([\s\S]*?)(?=<h[123]|$)/i);
+              const personnelClassMatch = html.match(/<h[23][^>]*(?:class|data-section)[^>]*[Pp]ersonnel[^>]*>([\s\S]*?)(?=<h2|$)/i);
               if (personnelClassMatch) {
                 personnelSection = personnelClassMatch[0];
               } else {
                 // Look for heading with text "Personnel" followed by content
-                const personnelHeadingMatch = html.match(/<h[23][^>]*>.*?(?:Personnel|Credits|Recording).*?<\/h[23]>([\s\S]*?)(?=<h[123]|$)/i);
+                // Capture until next h2 to include all subsections
+                const personnelHeadingMatch = html.match(/<h[23][^>]*>.*?(?:Personnel|Credits|Recording).*?<\/h[23]>([\s\S]*?)(?=<h2|$)/i);
                 if (personnelHeadingMatch) {
                   personnelSection = personnelHeadingMatch[0];
                 }
