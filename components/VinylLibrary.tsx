@@ -306,7 +306,7 @@ export default function VinylLibrary({ mode = "public", hideSearch = false, limi
         </div>
       )}
       {!hideSearch && (
-        <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+        <div className="mb-6">
           <SearchBar
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
@@ -315,46 +315,12 @@ export default function VinylLibrary({ mode = "public", hideSearch = false, limi
             selectedGenre={selectedGenre}
             onGenreChange={setSelectedGenre}
             availableGenres={getAvailableGenres()}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            showAddButton={!filterByOwner}
+            onAddClick={handleAddVinyl}
+            showViewToggle={true}
           />
-          <div className="flex items-center gap-2">
-            {/* View Mode Toggle */}
-            <div className="flex items-center gap-1 rounded-lg p-1">
-              <button
-                onClick={() => setViewMode("grid")}
-                className={`p-2 rounded transition-colors ${
-                  viewMode === "grid"
-                    ? "bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400"
-                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
-                }`}
-                aria-label="Grid view"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                </svg>
-              </button>
-              <button
-                onClick={() => setViewMode("list")}
-                className={`p-2 rounded transition-colors ${
-                  viewMode === "list"
-                    ? "bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400"
-                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
-                }`}
-                aria-label="List view"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-            </div>
-            {!filterByOwner && (
-              <button
-                onClick={handleAddVinyl}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-md hover:shadow-lg whitespace-nowrap"
-              >
-                <strong>+ Add Vinyl</strong>
-              </button>
-            )}
-          </div>
         </div>
       )}
 

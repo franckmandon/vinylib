@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import VinylLibrary from "@/components/VinylLibrary";
 import UserMenu from "@/components/UserMenu";
@@ -11,7 +11,9 @@ function HomeContent() {
   const { data: session, status } = useSession();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const pathname = usePathname();
   const [ownerFilter, setOwnerFilter] = useState<string | null>(null);
+  const isHomePage = pathname === "/";
 
   useEffect(() => {
     const owner = searchParams.get("owner");
@@ -41,8 +43,38 @@ function HomeContent() {
     <main className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       <div className="container mx-auto px-4 py-8">
         <header className="mb-12">
-          <div className="flex items-center justify-between">
-            <div>
+          {/* Mobile: UserMenu, Sign Out - above title (logged users) */}
+          {session?.user && (
+            <div className="flex items-center justify-end gap-3 mb-4 md:hidden">
+              <UserMenu />
+              <button
+                onClick={() => signOut({ callbackUrl: "/" })}
+                className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 rounded-lg text-sm font-medium transition-colors"
+              >
+                Sign Out
+              </button>
+            </div>
+          )}
+          {/* Mobile: Sign In/Create account above title for non-logged users */}
+          {!session?.user && (
+            <div className="flex items-center justify-end gap-2 mb-4 md:hidden">
+              <Link
+                href="/login"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/register"
+                className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 rounded-lg text-sm font-medium transition-colors"
+              >
+                Create an account
+              </Link>
+            </div>
+          )}
+          {/* Title section */}
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <div className="flex-1 min-w-0">
               <Link href="/" className="hover:opacity-80 transition-opacity">
                 <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-2">
                   Vinyl Report
@@ -52,8 +84,9 @@ function HomeContent() {
                 {ownerFilter ? `Vinyls from ${ownerFilter}` : "Mind the wax"}
               </p>
             </div>
-            {session?.user ? (
-              <div className="flex items-center gap-4">
+            {/* Desktop: UserMenu, Sign Out on the right, aligned top (logged users) */}
+            {session?.user && (
+              <div className="hidden md:flex items-center gap-3">
                 <UserMenu />
                 <button
                   onClick={() => signOut({ callbackUrl: "/" })}
@@ -62,17 +95,19 @@ function HomeContent() {
                   Sign Out
                 </button>
               </div>
-            ) : (
-              <div className="flex gap-1 sm:gap-2">
+            )}
+            {/* Desktop: Sign In/Create account on the right for non-logged users */}
+            {!session?.user && (
+              <div className="hidden md:flex gap-2">
                 <Link
                   href="/login"
-                  className="px-2 py-1.5 sm:px-4 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs sm:text-sm font-medium transition-colors"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/register"
-                  className="px-2 py-1.5 sm:px-4 sm:py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 rounded-lg text-xs sm:text-sm font-medium transition-colors"
+                  className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 rounded-lg text-sm font-medium transition-colors"
                 >
                   Create an account
                 </Link>

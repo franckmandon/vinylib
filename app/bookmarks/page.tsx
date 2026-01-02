@@ -209,24 +209,47 @@ export default function BookmarksPage() {
     <main className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       <div className="container mx-auto px-4 py-8">
         <header className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
+          {/* Mobile: Browse All, UserMenu, Sign Out - above title */}
+          {session?.user && (
+            <div className="flex items-center justify-end gap-3 mb-4 md:hidden">
+              <Link
+                href="/"
+                className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+              >
+                Browse All
+              </Link>
+              <UserMenu />
+              <button
+                onClick={() => signOut({ callbackUrl: "/" })}
+                className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 rounded-lg text-sm font-medium transition-colors"
+              >
+                Sign Out
+              </button>
+            </div>
+          )}
+          {/* Title section */}
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              {/* Ligne 1: Vinyl Report */}
               <Link href="/" className="hover:opacity-80 transition-opacity">
                 <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-2">
                   Vinyl Report
                 </h1>
               </Link>
-              <p className="text-slate-600 dark:text-slate-400 text-[1.4rem]">
+              {/* Ligne 2: My Bookmarks */}
+              <p className="text-slate-600 dark:text-slate-400 text-[1.4rem] mb-1">
                 My Bookmarks
               </p>
+              {/* Ligne 3: You have xxx bookmarks */}
               {session?.user && (
-                <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
+                <p className="text-slate-600 dark:text-slate-400 text-sm">
                   You have {bookmarks.length} {bookmarks.length === 1 ? 'bookmark' : 'bookmarks'}
                 </p>
               )}
             </div>
-            {session?.user ? (
-              <div className="flex items-center gap-4">
+            {/* Desktop: Browse All, UserMenu, Sign Out on the right, aligned top */}
+            {session?.user && (
+              <div className="hidden md:flex items-center gap-3">
                 <Link
                   href="/"
                   className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
@@ -240,21 +263,6 @@ export default function BookmarksPage() {
                 >
                   Sign Out
                 </button>
-              </div>
-            ) : (
-              <div className="flex gap-1 sm:gap-2">
-                <Link
-                  href="/login"
-                  className="px-2 py-1.5 sm:px-4 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs sm:text-sm font-medium transition-colors"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  href="/register"
-                  className="px-2 py-1.5 sm:px-4 sm:py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 rounded-lg text-xs sm:text-sm font-medium transition-colors"
-                >
-                  Create an account
-                </Link>
               </div>
             )}
           </div>
@@ -298,19 +306,19 @@ export default function BookmarksPage() {
                     <>
                       <button
                         onClick={() => handleViewDetails(bookmark.vinyl)}
-                        className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 bg-slate-600 hover:bg-slate-700 text-white text-xs sm:text-sm rounded transition-colors"
+                        className="flex-1 px-2 py-2 sm:px-3 sm:py-2 bg-slate-600 hover:bg-slate-700 text-white text-xs sm:text-sm rounded transition-colors"
                       >
                         Details
                       </button>
                       <button
                         onClick={() => handleAddToCollection(bookmark.vinyl)}
-                        className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm rounded transition-colors"
+                        className="flex-1 px-2 py-2 sm:px-3 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm rounded transition-colors"
                       >
                         Add to Collection
                       </button>
                       <button
                         onClick={() => handleDeleteBookmark(bookmark.vinylId)}
-                        className="px-2 py-1.5 sm:px-3 sm:py-2 bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm rounded transition-colors"
+                        className="px-2 py-2 sm:px-3 sm:py-2 bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm rounded transition-colors"
                       >
                         Remove
                       </button>
