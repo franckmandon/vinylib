@@ -27,6 +27,13 @@ export default function Footer() {
             >
               Cookie Policy
             </Link>
+            <span className="text-slate-400 dark:text-slate-600">|</span>
+            <Link
+              href="/contact"
+              className="hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+            >
+              Contact
+            </Link>
           </div>
         </div>
       </div>

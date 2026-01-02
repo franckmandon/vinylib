@@ -80,9 +80,11 @@ function LoginForm() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex flex-col items-center justify-center p-4">
       <div className="text-center mb-6">
-        <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-2">
-          Vinyl Report
-        </h1>
+        <Link href="/" className="hover:opacity-80 transition-opacity inline-block">
+          <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+            Vinyl Report
+          </h1>
+        </Link>
         <p className="text-slate-600 dark:text-slate-400 text-[1.4rem]">
           Mind the wax
         </p>
