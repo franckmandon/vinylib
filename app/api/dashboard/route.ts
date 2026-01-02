@@ -5,6 +5,7 @@ import { getUserVinyls } from "@/lib/data";
 import { Vinyl } from "@/types/vinyl";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 interface DashboardStats {
   // Main stats
@@ -74,7 +75,7 @@ interface DashboardStats {
     collector: { level: number; name: string };
     treasureHunter: { level: number; name: string };
     timeTraveler: boolean;
-    completionist: { count: number; name: string };
+    completionist: { level: number; name: string };
   };
 }
 
@@ -206,7 +207,7 @@ export async function GET(request: NextRequest) {
           collector: { level: 0, name: "Novice" },
           treasureHunter: { level: 0, name: "Starter" },
           timeTraveler: false,
-          completionist: { count: 0, name: "Beginner" },
+          completionist: { level: 0, name: "Beginner" },
         },
       });
     }

@@ -71,7 +71,7 @@ interface DashboardStats {
     collector: { level: number; name: string };
     treasureHunter: { level: number; name: string };
     timeTraveler: boolean;
-    completionist: { count: number; name: string };
+    completionist: { level: number; name: string };
   };
 }
 
@@ -395,7 +395,7 @@ export default function DashboardPage() {
                         border: "1px solid #334155",
                         borderRadius: "8px"
                       }}
-                      formatter={(value: number) => [`€${value.toFixed(2)}`, "Value"]}
+                      formatter={(value: number | undefined) => value !== undefined ? [`€${value.toFixed(2)}`, "Value"] : ["", "Value"]}
                     />
                     <Line 
                       type="monotone" 
@@ -437,7 +437,7 @@ export default function DashboardPage() {
                       border: "1px solid #334155",
                       borderRadius: "8px"
                     }}
-                    formatter={(value: number) => [`€${value.toFixed(2)}`, "Investment"]}
+                    formatter={(value: number | undefined) => value !== undefined ? [`€${value.toFixed(2)}`, "Investment"] : ["", "Investment"]}
                   />
                   <Bar dataKey="amount" fill="#3b82f6" radius={[8, 8, 0, 0]} />
                 </BarChart>
@@ -537,7 +537,7 @@ export default function DashboardPage() {
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ genre, percent }) => `${genre} ${(percent * 100).toFixed(0)}%`}
+                      label={(entry: any) => `${entry.genre} ${(entry.percent * 100).toFixed(0)}%`}
                       outerRadius={80}
                       fill="#8884d8"
                       dataKey="count"
@@ -562,7 +562,7 @@ export default function DashboardPage() {
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ decade, percent }) => `${decade} ${(percent * 100).toFixed(0)}%`}
+                      label={(entry: any) => `${entry.decade} ${(entry.percent * 100).toFixed(0)}%`}
                       outerRadius={80}
                       fill="#8884d8"
                       dataKey="count"
@@ -587,7 +587,7 @@ export default function DashboardPage() {
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ condition, percent }) => `${condition} ${(percent * 100).toFixed(0)}%`}
+                      label={(entry: any) => `${entry.condition} ${(entry.percent * 100).toFixed(0)}%`}
                       outerRadius={80}
                       fill="#8884d8"
                       dataKey="count"
@@ -692,7 +692,7 @@ export default function DashboardPage() {
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ rarity, percent }) => `${rarity} ${(percent * 100).toFixed(0)}%`}
+                      label={(entry: any) => `${entry.rarity} ${(entry.percent * 100).toFixed(0)}%`}
                       outerRadius={80}
                       fill="#8884d8"
                       dataKey="count"
