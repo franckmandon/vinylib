@@ -100,12 +100,23 @@ export default function UserMenu() {
             onClick={() => setIsOpen(false)}
             className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
           >
-            Bookmarks
+            My Bookmarks
+          </Link>
+          <Link
+            href="/dashboard"
+            onClick={() => setIsOpen(false)}
+            className="flex items-center justify-between px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+          >
+            <span>My Dashboard</span>
+            <span className="ml-2 px-2 py-0.5 bg-blue-600 text-white text-xs font-semibold rounded">
+              Beta
+            </span>
           </Link>
           <Link
             href="/shuffle"
             onClick={() => setIsOpen(false)}
-            className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+            className="block px-4 py-2 text-sm text-white font-bold transition-colors"
+            style={{ backgroundColor: '#534AD3' }}
           >
             Shuffle Playlist
           </Link>
