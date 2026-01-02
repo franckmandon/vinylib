@@ -171,13 +171,10 @@ export async function PUT(request: NextRequest) {
       }
     }
     
-    // Update notes in owners array for this user
-    if (notes !== undefined && ownerIndex !== -1) {
-      existingVinyl.owners[ownerIndex].notes = notes || undefined;
-      // Also update the vinyl's notes field for backward compatibility (only if user is primary owner)
-      if (existingVinyl.userId === session.user.id) {
-        otherUpdates.notes = notes;
-      }
+    // Notes (description) should always be saved to vinyl.notes (visible to all users)
+    // Not to owners[].notes (which is for personal notes)
+    if (notes !== undefined) {
+      otherUpdates.notes = notes;
     }
     
     // Update purchasePrice in owners array for this user

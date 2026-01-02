@@ -5,7 +5,7 @@ import Footer from "@/components/Footer";
 import BookmarkSync from "@/components/BookmarkSync";
 
 export const metadata: Metadata = {
-  title: "Vinyl Report - Vinyl Library Manager",
+  title: "Vinyl Report - Your Vinyl Collection Manager",
   description: "Manage your vinyl collection with ease",
   applicationName: "Vinyl Report",
   icons: {

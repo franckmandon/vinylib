@@ -109,7 +109,7 @@ export async function sendPasswordResetEmail(email: string, username: string, re
     const result = await resend.emails.send({
       from: fromEmail,
       to: email,
-      subject: "Réinitialisation de votre mot de passe - Vinyl Report",
+      subject: "Password Reset - Vinyl Report",
       html: `
         <!DOCTYPE html>
         <html>
@@ -120,32 +120,32 @@ export async function sendPasswordResetEmail(email: string, username: string, re
           <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
             <div style="background: #0f172a; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
               <p style="color: rgba(255, 255, 255, 0.7); font-size: 12px; margin: 0 0 15px 0;">Vinyl Report - Your Vinyl Library Manager</p>
-              <h1 style="color: white; margin: 0; font-size: 28px;">Réinitialisation du mot de passe</h1>
+              <h1 style="color: white; margin: 0; font-size: 28px;">Password Reset</h1>
             </div>
             <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
               <p style="font-size: 16px; margin-bottom: 20px;">
-                Bonjour <strong>${username}</strong>,
+                Hello <strong>${username}</strong>,
               </p>
               <p style="font-size: 16px; margin-bottom: 20px;">
-                Vous avez demandé à réinitialiser votre mot de passe pour votre compte Vinyl Report.
+                You have requested to reset your password for your Vinyl Report account.
               </p>
               <p style="font-size: 16px; margin-bottom: 20px;">
-                Cliquez sur le bouton ci-dessous pour créer un nouveau mot de passe :
+                Click the button below to create a new password:
               </p>
               <div style="text-align: center; margin: 30px 0;">
                 <a href="${resetUrl}" 
                    style="background: rgb(37, 99, 235); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
-                  Réinitialiser mon mot de passe
+                  Reset my password
                 </a>
               </div>
               <p style="font-size: 14px; color: #666; margin-bottom: 20px;">
-                Ou copiez-collez ce lien dans votre navigateur :<br>
+                Or copy and paste this link into your browser:<br>
                 <a href="${resetUrl}" style="color: rgb(37, 99, 235); word-break: break-all;">${resetUrl}</a>
               </p>
               <p style="font-size: 14px; color: #666; margin-top: 30px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
-                Ce lien est valide pendant 1 heure.<br>
-                Si vous n'avez pas demandé cette réinitialisation, ignorez cet email.<br><br>
-                L'équipe Vinyl Report
+                This link is valid for 1 hour.<br>
+                If you did not request this reset, please ignore this email.<br><br>
+                The Vinyl Report Team
               </p>
             </div>
           </body>

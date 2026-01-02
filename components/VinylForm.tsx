@@ -61,32 +61,18 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
     if (vinyl) {
       // Get user's condition from owners array if available
       let userCondition = "";
-      let userNotes = "";
       let userPurchasePrice: number | undefined = undefined;
       let userAddedAt = "";
       if (session?.user?.id && vinyl.owners) {
         const userOwner = vinyl.owners.find(o => o.userId === session.user.id);
         userCondition = userOwner?.condition || "";
-        userNotes = userOwner?.notes || "";
         userPurchasePrice = userOwner?.purchasePrice;
         userAddedAt = userOwner?.addedAt || "";
       } else if (session?.user?.id && vinyl.userId === session.user.id) {
-        // Fallback to vinyl.condition and vinyl.notes for backward compatibility
+        // Fallback to vinyl.condition for backward compatibility
         userCondition = vinyl.condition || "";
-        userNotes = vinyl.notes || "";
         // For backward compatibility, use createdAt as addedAt
         userAddedAt = vinyl.createdAt || "";
-      } else if (!session?.user?.id) {
-        // For non-logged-in users, show notes from first owner or vinyl notes
-        if (vinyl.owners && vinyl.owners.length > 0) {
-          // Get notes from first owner that has notes
-          const ownerWithNotes = vinyl.owners.find(o => o.notes && o.notes.trim());
-          userNotes = ownerWithNotes?.notes || vinyl.owners[0]?.notes || "";
-        }
-        // Fallback to vinyl.notes for backward compatibility
-        if (!userNotes) {
-          userNotes = vinyl.notes || "";
-        }
       }
       
       setFormData({
@@ -96,7 +82,7 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
         genre: vinyl.genre || "",
         label: vinyl.label || "",
         condition: userCondition,
-        notes: userNotes,
+        notes: vinyl.notes || "", // Always show the general description (vinyl.notes), visible to all users
         artistBio: vinyl.artistBio || "",
         purchasePrice: userPurchasePrice,
         addedAt: userAddedAt,
