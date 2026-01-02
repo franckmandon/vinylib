@@ -17,8 +17,11 @@ export async function GET(request: NextRequest) {
   try {
     // Try to find the Wikipedia page for the album
     const searchQueries = [
+      `${album} (${artist} album)`,
       `${album} (album)`,
       `${album} by ${artist}`,
+      `${artist} - ${album}`,
+      `${artist}: ${album}`,
       `${artist} ${album}`,
     ];
 
@@ -27,13 +30,23 @@ export async function GET(request: NextRequest) {
 
     for (const query of searchQueries) {
       try {
-        // First, get the page summary to find the page title
-        const summaryUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`;
-        const summaryResponse = await fetch(summaryUrl, {
+        // First, try to get the page directly
+        let summaryUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`;
+        let summaryResponse = await fetch(summaryUrl, {
           headers: {
             "User-Agent": "Vinyl Report Vinyl Library Manager/1.0",
           },
         });
+
+        // If direct page doesn't exist, try Wikipedia search API
+        if (!summaryResponse.ok) {
+          const searchApiUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(album)}`;
+          summaryResponse = await fetch(searchApiUrl, {
+            headers: {
+              "User-Agent": "Vinyl Report Vinyl Library Manager/1.0",
+            },
+          });
+        }
 
         if (summaryResponse.ok) {
           const summaryData = await summaryResponse.json();
@@ -50,26 +63,168 @@ export async function GET(request: NextRequest) {
           if (pageResponse.ok) {
             const html = await pageResponse.text();
             
-            // Try to extract credits from infobox or specific sections
-            // Look for "Personnel" or "Credits" sections
-            const personnelMatch = html.match(/<h[23][^>]*>.*?(?:Personnel|Credits|Recording).*?<\/h[23]>([\s\S]*?)(?=<h[23]|$)/i);
-            if (personnelMatch) {
-              // Extract text from HTML, remove tags
-              let creditsText = personnelMatch[1]
-                .replace(/<[^>]+>/g, " ")
-                .replace(/\s+/g, " ")
-                .trim();
+            // First, try to find section with id="Personnel" or id="personnel"
+            let personnelSection = "";
+            
+            // Look for section with id containing "Personnel" or "personnel"
+            const personnelIdMatch = html.match(/<h[23][^>]*id="[^"]*[Pp]ersonnel[^"]*"[^>]*>([\s\S]*?)(?=<h[123]|$)/i);
+            if (personnelIdMatch) {
+              personnelSection = personnelIdMatch[0];
+            } else {
+              // Look for section with class or data attributes containing "Personnel"
+              const personnelClassMatch = html.match(/<h[23][^>]*(?:class|data-section)[^>]*[Pp]ersonnel[^>]*>([\s\S]*?)(?=<h[123]|$)/i);
+              if (personnelClassMatch) {
+                personnelSection = personnelClassMatch[0];
+              } else {
+                // Look for heading with text "Personnel" followed by content
+                const personnelHeadingMatch = html.match(/<h[23][^>]*>.*?(?:Personnel|Credits|Recording).*?<\/h[23]>([\s\S]*?)(?=<h[123]|$)/i);
+                if (personnelHeadingMatch) {
+                  personnelSection = personnelHeadingMatch[0];
+                }
+              }
+            }
+            
+            if (personnelSection) {
+              // Extract all list items from the Personnel section, regardless of structure (columns, divs, etc.)
+              // This will find ALL <li> elements in the entire section, even if they're in multiple <ul> or nested structures
+              const listItems: string[] = [];
+              const liRegex = /<li[^>]*>([\s\S]*?)<\/li>/gi;
+              let liMatch;
               
-              // Clean up common Wikipedia artifacts
-              creditsText = creditsText
-                .replace(/\[citation needed\]/gi, "")
-                .replace(/\[.*?\]/g, "")
-                .replace(/\(edit\)/gi, "")
-                .trim();
+              // Reset regex lastIndex to ensure we search the entire section
+              liRegex.lastIndex = 0;
               
-              if (creditsText.length > 50) { // Only use if substantial content
-                credits = creditsText;
+              while ((liMatch = liRegex.exec(personnelSection)) !== null) {
+                let itemText = liMatch[1]
+                  .replace(/<[^>]+>/g, " ") // Remove all HTML tags, replace with space
+                  .replace(/\s+/g, " ") // Normalize whitespace
+                  .trim();
+                
+                // Clean up Wikipedia artifacts
+                itemText = itemText
+                  .replace(/\[citation needed\]/gi, "")
+                  .replace(/\[.*?\]/g, "")
+                  .replace(/\(edit\)/gi, "")
+                  .trim();
+                
+                if (itemText.length > 0) {
+                  listItems.push(itemText);
+                }
+              }
+              
+              // If we found list items, join them with newlines and add bullets
+              if (listItems.length > 0) {
+                credits = listItems.map(item => `• ${item}`).join("\n");
+              } else {
+                // Fallback: if no <li> found, try the original method
+                // Extract text from HTML, remove tags but preserve line breaks
+                let creditsText = personnelSection
+                  .replace(/<h[23][^>]*>.*?<\/h[23]>/i, "") // Remove the heading itself
+                  .replace(/<ul[^>]*>/gi, "") // Remove ul opening tag
+                  .replace(/<li[^>]*>/gi, "• ") // Convert list items to bullets
+                  .replace(/<\/li>/gi, "\n") // Each list item ends with a newline
+                  .replace(/<\/ul>/gi, "") // Remove ul closing tag (no extra newline needed)
+                  .replace(/<p[^>]*>/gi, "") // Remove p opening tag
+                  .replace(/<\/p>/gi, "\n") // Each paragraph ends with a newline
+                  .replace(/<br\s*\/?>/gi, "\n") // Convert line breaks
+                  .replace(/<div[^>]*>/gi, "") // Remove div opening tags
+                  .replace(/<\/div>/gi, "") // Remove div closing tags (no extra newline)
+                  .replace(/<[^>]+>/g, "") // Remove all remaining HTML tags (without adding spaces)
+                  .replace(/\n{2,}/g, "\n") // Replace 2+ consecutive newlines with single newline
+                  .replace(/[ \t]+/g, " ") // Normalize spaces and tabs within lines (but preserve newlines)
+                  .replace(/^[ \t]+|[ \t]+$/gm, "") // Trim each line
+                  .trim();
+                
+                // Clean up common Wikipedia artifacts (preserve newlines)
+                creditsText = creditsText
+                  .replace(/\[citation needed\]/gi, "")
+                  .replace(/\[.*?\]/g, "")
+                  .replace(/\(edit\)/gi, "")
+                  .replace(/[ \t]+/g, " ") // Normalize spaces and tabs within lines (but preserve newlines)
+                  .replace(/^[ \t]+|[ \t]+$/gm, "") // Trim each line (spaces/tabs only, not newlines)
+                  .replace(/\n{2,}/g, "\n") // Ensure no double newlines remain
+                  .trim();
+                
+                if (creditsText.length > 50) {
+                  credits = creditsText;
+                }
+              }
+              
+              if (credits && credits.length > 50) {
                 break;
+              }
+            }
+            
+            // If no Personnel section found, try to find it by searching for the section ID pattern
+            if (!credits) {
+              // Wikipedia sections often have IDs like "Personnel" or "personnel"
+              // Try to find span or div with id containing "Personnel"
+              const personnelIdPattern = /<[^>]+id="[^"]*[Pp]ersonnel[^"]*"[^>]*>([\s\S]*?)(?=<h[23]|<\/div>|<\/section>|$)/i;
+              const personnelIdMatch = html.match(personnelIdPattern);
+              if (personnelIdMatch) {
+                const sectionContent = personnelIdMatch[1];
+                
+                // Extract all list items from this section
+                const listItems: string[] = [];
+                const liRegex = /<li[^>]*>([\s\S]*?)<\/li>/gi;
+                let liMatch;
+                
+                while ((liMatch = liRegex.exec(sectionContent)) !== null) {
+                  let itemText = liMatch[1]
+                    .replace(/<[^>]+>/g, " ") // Remove all HTML tags, replace with space
+                    .replace(/\s+/g, " ") // Normalize whitespace
+                    .trim();
+                  
+                  // Clean up Wikipedia artifacts
+                  itemText = itemText
+                    .replace(/\[citation needed\]/gi, "")
+                    .replace(/\[.*?\]/g, "")
+                    .replace(/\(edit\)/gi, "")
+                    .trim();
+                  
+                  if (itemText.length > 0) {
+                    listItems.push(itemText);
+                  }
+                }
+                
+                // If we found list items, join them with newlines and add bullets
+                if (listItems.length > 0) {
+                  credits = listItems.map(item => `• ${item}`).join("\n");
+                } else {
+                  // Fallback: if no <li> found, try the original method
+                  let creditsText = sectionContent
+                    .replace(/<ul[^>]*>/gi, "") // Remove ul opening tag
+                    .replace(/<li[^>]*>/gi, "• ") // Convert list items to bullets
+                    .replace(/<\/li>/gi, "\n") // Each list item ends with a newline
+                    .replace(/<\/ul>/gi, "") // Remove ul closing tag (no extra newline needed)
+                    .replace(/<p[^>]*>/gi, "") // Remove p opening tag
+                    .replace(/<\/p>/gi, "\n") // Each paragraph ends with a newline
+                    .replace(/<br\s*\/?>/gi, "\n") // Convert line breaks
+                    .replace(/<div[^>]*>/gi, "") // Remove div opening tags
+                    .replace(/<\/div>/gi, "") // Remove div closing tags (no extra newline)
+                    .replace(/<[^>]+>/g, "") // Remove all remaining HTML tags (without adding spaces)
+                    .replace(/\n{2,}/g, "\n") // Replace 2+ consecutive newlines with single newline
+                    .replace(/[ \t]+/g, " ") // Normalize spaces and tabs within lines (but preserve newlines)
+                    .replace(/^[ \t]+|[ \t]+$/gm, "") // Trim each line
+                    .trim();
+                  
+                  creditsText = creditsText
+                    .replace(/\[citation needed\]/gi, "")
+                    .replace(/\[.*?\]/g, "")
+                    .replace(/\(edit\)/gi, "")
+                    .replace(/[ \t]+/g, " ") // Normalize spaces and tabs within lines (but preserve newlines)
+                    .replace(/^[ \t]+|[ \t]+$/gm, "") // Trim each line (spaces/tabs only, not newlines)
+                    .replace(/\n{2,}/g, "\n") // Ensure no double newlines remain
+                    .trim();
+                  
+                  if (creditsText.length > 50) {
+                    credits = creditsText;
+                  }
+                }
+                
+                if (credits && credits.length > 50) {
+                  break;
+                }
               }
             }
             

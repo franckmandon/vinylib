@@ -1467,7 +1467,7 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                     rows={4}
                     disabled={!isEditMode}
                     readOnly={!isEditMode}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed whitespace-pre-wrap"
                     placeholder="Add album credits or fetch from Wikipedia..."
                   />
                 </div>
