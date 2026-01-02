@@ -35,9 +35,48 @@ export default function Footer() {
       
       {/* Footer Links */}
       <div className="container mx-auto px-4 py-6">
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm text-slate-600 dark:text-slate-400">
+        <div className="flex flex-col items-center justify-center gap-4 text-sm text-slate-600 dark:text-slate-400">
           <p>© 2025 Vinyl Report, Mind the wax.</p>
-          <div className="flex items-center gap-4">
+          {/* Mobile: Links stacked vertically */}
+          <div className="flex flex-col items-center gap-2 sm:hidden">
+            <Link
+              href="/privacy-policy"
+              className="transition-colors"
+              style={{ color: 'rgb(37 99 235)' }}
+            >
+              Privacy Policy
+            </Link>
+            <Link
+              href="/terms-of-service"
+              className="transition-colors"
+              style={{ color: 'rgb(37 99 235)' }}
+            >
+              Terms of Service
+            </Link>
+            <Link
+              href="/cookie-policy"
+              className="transition-colors"
+              style={{ color: 'rgb(37 99 235)' }}
+            >
+              Cookie Policy
+            </Link>
+            <Link
+              href="/contact"
+              className="transition-colors"
+              style={{ color: 'rgb(37 99 235)' }}
+            >
+              Contact
+            </Link>
+            <Link
+              href="/faq"
+              className="transition-colors"
+              style={{ color: 'rgb(37 99 235)' }}
+            >
+              FAQ
+            </Link>
+          </div>
+          {/* Desktop: Links in a row */}
+          <div className="hidden sm:flex items-center gap-4">
             <Link
               href="/privacy-policy"
               className="transition-colors"

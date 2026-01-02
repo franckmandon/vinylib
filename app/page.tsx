@@ -123,7 +123,9 @@ function HomeContent() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr] gap-6">
               <div className="flex flex-col justify-center lg:pr-8">
                 <p className="font-bold text-slate-900 dark:text-slate-100 mb-4 text-[1.875rem] leading-tight">
-                  Every record tells a story.<br />
+                  Every record tells a story.
+                </p>
+                <p className="font-bold text-slate-900 dark:text-slate-100 mb-4 text-[1.875rem] leading-tight">
                   The day you found it, the first time it moved you, the memories pressed into its grooves.
                 </p>
                 <p className="text-slate-600 dark:text-slate-400 text-lg leading-relaxed">

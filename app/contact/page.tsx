@@ -19,34 +19,74 @@ export default function ContactPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    
+    console.log("[contact-form] Form submission started");
+    console.log("[contact-form] Form data:", { firstName, lastName, email, companyName, country, messageLength: message.length });
+    
     setError("");
     setSuccess(false);
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/contact", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ 
-          firstName, 
-          lastName, 
-          email, 
-          companyName, 
-          country, 
-          message 
-        }),
-      });
+      const formData = {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: email.trim(),
+        companyName: companyName.trim() || undefined,
+        country: country.trim() || undefined,
+        message: message.trim()
+      };
 
-      const data = await response.json();
+      console.log("[contact-form] Sending request to /api/contact");
+      console.log("[contact-form] Request data:", formData);
+
+      // Create AbortController for timeout handling
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+      let response;
+      try {
+        response = await fetch("/api/contact", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+        if (fetchError.name === 'AbortError') {
+          console.error("[contact-form] Request timeout");
+          throw new Error("Request timed out. Please check your connection and try again.");
+        }
+        throw fetchError;
+      }
+
+      console.log("[contact-form] Response status:", response.status);
+      console.log("[contact-form] Response ok:", response.ok);
+
+      let data;
+      try {
+        data = await response.json();
+        console.log("[contact-form] Response data:", data);
+      } catch (jsonError) {
+        console.error("[contact-form] Error parsing JSON response:", jsonError);
+        const text = await response.text();
+        console.error("[contact-form] Response text:", text);
+        throw new Error("Invalid response from server. Please try again.");
+      }
 
       if (!response.ok) {
+        console.error("[contact-form] Error response:", data);
         setError(data.error || "Failed to send message. Please try again.");
         setIsSubmitting(false);
         return;
       }
 
+      console.log("[contact-form] Success! Setting success state");
       setSuccess(true);
       setFirstName("");
       setLastName("");
@@ -56,7 +96,9 @@ export default function ContactPage() {
       setMessage("");
       setIsSubmitting(false);
     } catch (error) {
-      console.error("Error submitting contact form:", error);
+      console.error("[contact-form] Error submitting contact form:", error);
+      console.error("[contact-form] Error type:", typeof error);
+      console.error("[contact-form] Error message:", error instanceof Error ? error.message : String(error));
       setError("An unexpected error occurred. Please try again later.");
       setIsSubmitting(false);
     }
@@ -129,7 +171,7 @@ export default function ContactPage() {
               Have a question or feedback? We&apos;d love to hear from you!
             </p>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label
@@ -144,6 +186,7 @@ export default function ContactPage() {
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 required
+                autoComplete="given-name"
                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="John"
                 disabled={isSubmitting}
@@ -163,6 +206,7 @@ export default function ContactPage() {
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 required
+                autoComplete="family-name"
                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Doe"
                 disabled={isSubmitting}
@@ -183,6 +227,8 @@ export default function ContactPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="email"
+              inputMode="email"
               className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="your.email@example.com"
               disabled={isSubmitting}
