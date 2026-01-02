@@ -3,6 +3,7 @@ import "./globals.css";
 import { SessionProvider } from "@/components/SessionProvider";
 import Footer from "@/components/Footer";
 import BookmarkSync from "@/components/BookmarkSync";
+import ThemeMetaTags from "@/components/ThemeMetaTags";
 
 export const metadata: Metadata = {
   title: "Vinyl Report - Your Vinyl Collection Manager",
@@ -20,7 +21,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "Vinyl Report",
   },
   openGraph: {
@@ -38,6 +39,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased flex flex-col min-h-screen">
+        <ThemeMetaTags />
         <SessionProvider>
           <BookmarkSync />
           <div className="flex-1">
