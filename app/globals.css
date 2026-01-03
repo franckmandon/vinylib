@@ -31,11 +31,11 @@ body {
   }
 }
 
-/* Uniformisation COMPLÈTE de tous les inputs de type date */
+/* Uniformisation ULTRA-FORCÉE de tous les inputs de type date pour iOS/Safari */
 input[type="date"] {
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
   height: 42px !important;
   min-height: 42px !important;
   max-height: 42px !important;
@@ -47,9 +47,10 @@ input[type="date"] {
   width: 100% !important;
   text-align: left !important;
   direction: ltr !important;
+  -webkit-text-align: left !important;
 }
 
-/* Uniformiser la largeur en mode disabled/readonly */
+/* Uniformiser en mode disabled/readonly */
 input[type="date"]:disabled,
 input[type="date"][readonly] {
   height: 42px !important;
@@ -59,6 +60,7 @@ input[type="date"][readonly] {
   padding-right: 2.5rem !important;
   text-align: left !important;
   direction: ltr !important;
+  -webkit-text-align: left !important;
 }
 
 /* Icône du calendrier */
@@ -76,30 +78,46 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(100%);
 }
 
-/* Format du texte dans les dates - alignement à gauche */
+/* Format du texte dans les dates - FORCE l'alignement à gauche */
 input[type="date"]::-webkit-datetime-edit {
   padding: 0 !important;
-  display: flex !important;
+  margin: 0 !important;
+  display: inline-block !important;
   align-items: center !important;
   text-align: left !important;
   justify-content: flex-start !important;
+  -webkit-text-align: left !important;
+  width: 100% !important;
 }
 
 input[type="date"]::-webkit-datetime-edit-fields-wrapper {
   padding: 0 !important;
+  margin: 0 !important;
   text-align: left !important;
-  display: flex !important;
+  display: inline-block !important;
   justify-content: flex-start !important;
+  -webkit-text-align: left !important;
+  width: auto !important;
 }
 
 input[type="date"]::-webkit-datetime-edit-text {
-  padding: 0 !important;
+  padding: 0 0.125rem !important;
+  text-align: left !important;
 }
 
 input[type="date"]::-webkit-datetime-edit-month-field,
 input[type="date"]::-webkit-datetime-edit-day-field,
 input[type="date"]::-webkit-datetime-edit-year-field {
   text-align: left !important;
+  padding: 0 !important;
+  -webkit-text-align: left !important;
+}
+
+/* Force container alignment */
+input[type="date"]::-webkit-inner-spin-button,
+input[type="date"]::-webkit-outer-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
 }
 
 /* S'assurer que tous les inputs number ont aussi la même hauteur */
