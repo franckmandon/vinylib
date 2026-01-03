@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useReCaptcha } from "@/hooks/useReCaptcha";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
@@ -61,6 +62,9 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex flex-col items-center justify-center p-4">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
       <div className="text-center mb-6">
         <Link href="/" className="hover:opacity-80 transition-opacity inline-block">
           <h1 className="font-bold text-slate-900 dark:text-slate-100 mb-1" style={{ fontSize: '3rem' }}>

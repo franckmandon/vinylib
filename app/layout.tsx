@@ -5,6 +5,7 @@ import Footer from "@/components/Footer";
 import BookmarkSync from "@/components/BookmarkSync";
 import ThemeMetaTags from "@/components/ThemeMetaTags";
 import ReCaptchaWrapper from "@/components/ReCaptchaWrapper";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 export const metadata: Metadata = {
   title: "Vinyl Report - Your Vinyl Collection Manager",
@@ -37,18 +38,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className="antialiased flex flex-col min-h-screen">
-        <ThemeMetaTags />
-        <ReCaptchaWrapper>
-          <SessionProvider>
-            <BookmarkSync />
-            <div className="flex-1">
-              {children}
-            </div>
-            <Footer />
-          </SessionProvider>
-        </ReCaptchaWrapper>
+        <ThemeProvider>
+          <ThemeMetaTags />
+          <ReCaptchaWrapper>
+            <SessionProvider>
+              <BookmarkSync />
+              <div className="flex-1">
+                {children}
+              </div>
+              <Footer />
+            </SessionProvider>
+          </ReCaptchaWrapper>
+        </ThemeProvider>
       </body>
     </html>
   );

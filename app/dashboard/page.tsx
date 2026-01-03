@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import UserMenu from "@/components/UserMenu";
+import ThemeToggle from "@/components/ThemeToggle";
 import Image from "next/image";
 import {
   LineChart,
@@ -283,6 +284,7 @@ export default function DashboardPage() {
         <header className="mb-8">
           {session?.user && (
             <div className="flex items-center justify-end gap-3 mb-4 md:hidden">
+              <ThemeToggle />
               <Link
                 href="/"
                 className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
@@ -311,6 +313,7 @@ export default function DashboardPage() {
             </div>
             {session?.user && (
               <div className="hidden md:flex items-center gap-3">
+                <ThemeToggle />
                 <Link
                   href="/"
                   className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"

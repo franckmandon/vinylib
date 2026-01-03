@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import UserMenu from "@/components/UserMenu";
+import ThemeToggle from "@/components/ThemeToggle";
 import FAQAccordion, { faqs } from "@/components/FAQAccordion";
 
 export default function FAQPage() {
@@ -15,6 +16,7 @@ export default function FAQPage() {
           {/* Mobile: Browse All, UserMenu, Sign Out - above title (logged users) */}
           {session?.user && (
             <div className="flex items-center justify-end gap-3 mb-4 md:hidden">
+              <ThemeToggle />
               <Link
                 href="/"
                 className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
@@ -34,6 +36,7 @@ export default function FAQPage() {
           {/* Desktop: Browse All, UserMenu, Sign Out - top right (logged users) */}
           {session?.user && (
             <div className="hidden md:flex items-center justify-end gap-3 mb-4">
+              <ThemeToggle />
               <Link
                 href="/"
                 className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
@@ -53,6 +56,7 @@ export default function FAQPage() {
           {/* Mobile: Sign In/Create account above title for non-logged users */}
           {!session?.user && (
             <div className="flex items-center justify-end gap-2 mb-4 md:hidden">
+              <ThemeToggle />
               <Link
                 href="/login"
                 className="px-4 py-2 text-white rounded-lg text-sm font-medium transition-colors"
@@ -74,6 +78,7 @@ export default function FAQPage() {
           {/* Desktop: Sign In/Create account above title for non-logged users */}
           {!session?.user && (
             <div className="hidden md:flex items-center justify-end gap-2 mb-4">
+              <ThemeToggle />
               <Link
                 href="/login"
                 className="px-4 py-2 text-white rounded-lg text-sm font-medium transition-colors"

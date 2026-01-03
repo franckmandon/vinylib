@@ -7,6 +7,7 @@ import Link from "next/link";
 import VinylLibrary from "@/components/VinylLibrary";
 import UserMenu from "@/components/UserMenu";
 import FAQAccordion, { faqs } from "@/components/FAQAccordion";
+import ThemeToggle from "@/components/ThemeToggle";
 
 function HomeContent() {
   const { data: session, status } = useSession();
@@ -47,6 +48,7 @@ function HomeContent() {
           {/* Mobile: UserMenu, Sign Out - above title (logged users) */}
           {session?.user && (
             <div className="flex items-center justify-end gap-3 mb-4 md:hidden">
+              <ThemeToggle />
               <UserMenu />
               <button
                 onClick={() => signOut({ callbackUrl: "/" })}
@@ -59,6 +61,7 @@ function HomeContent() {
           {/* Mobile: Sign In/Create account above title for non-logged users */}
           {!session?.user && (
             <div className="flex items-center justify-end gap-2 mb-4 md:hidden">
+              <ThemeToggle />
               <Link
                 href="/login"
                 className="px-4 py-2 text-white rounded-lg text-sm font-medium transition-colors"
@@ -91,6 +94,7 @@ function HomeContent() {
             {/* Desktop: UserMenu, Sign Out on the right, aligned top (logged users) */}
             {session?.user && (
               <div className="hidden md:flex items-center gap-3">
+                <ThemeToggle />
                 <UserMenu />
                 <button
                   onClick={() => signOut({ callbackUrl: "/" })}
@@ -102,7 +106,8 @@ function HomeContent() {
             )}
             {/* Desktop: Sign In/Create account on the right for non-logged users */}
             {!session?.user && (
-              <div className="hidden md:flex gap-2">
+              <div className="hidden md:flex items-center gap-2">
+                <ThemeToggle />
                 <Link
                   href="/login"
                   className="px-4 py-2 text-white rounded-lg text-sm font-medium transition-colors"

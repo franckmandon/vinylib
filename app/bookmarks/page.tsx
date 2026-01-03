@@ -9,6 +9,7 @@ import VinylCard from "@/components/VinylCard";
 import VinylForm from "@/components/VinylForm";
 import SearchBar from "@/components/SearchBar";
 import UserMenu from "@/components/UserMenu";
+import ThemeToggle from "@/components/ThemeToggle";
 import { Vinyl } from "@/types/vinyl";
 
 export default function BookmarksPage() {
@@ -212,6 +213,7 @@ export default function BookmarksPage() {
           {/* Mobile: Browse All, UserMenu, Sign Out - above title */}
           {session?.user && (
             <div className="flex items-center justify-end gap-3 mb-4 md:hidden">
+              <ThemeToggle />
               <Link
                 href="/"
                 className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
@@ -250,6 +252,7 @@ export default function BookmarksPage() {
             {/* Desktop: Browse All, UserMenu, Sign Out on the right, aligned top */}
             {session?.user && (
               <div className="hidden md:flex items-center gap-3">
+                <ThemeToggle />
                 <Link
                   href="/"
                   className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
