@@ -31,23 +31,63 @@ body {
   }
 }
 
-/* Uniformiser tous les inputs de type date */
+/* Uniformisation COMPLÈTE de tous les inputs de type date */
 input[type="date"] {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
   height: 42px !important;
+  min-height: 42px !important;
+  max-height: 42px !important;
   padding: 0.5rem 0.75rem !important;
+  padding-right: 2.5rem !important;
   line-height: 1.5 !important;
   box-sizing: border-box !important;
+  display: block !important;
+  width: 100% !important;
 }
 
+/* Uniformiser la largeur en mode disabled/readonly */
+input[type="date"]:disabled,
+input[type="date"][readonly] {
+  height: 42px !important;
+  min-height: 42px !important;
+  max-height: 42px !important;
+  padding: 0.5rem 0.75rem !important;
+  padding-right: 2.5rem !important;
+}
+
+/* Icône du calendrier */
 input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(65%) sepia(15%) saturate(1500%) hue-rotate(230deg) brightness(90%) contrast(90%);
   cursor: pointer;
-  margin-left: 0.5rem;
+  position: absolute;
+  right: 0.75rem;
+  width: 1rem;
+  height: 1rem;
 }
 
 /* Dark mode pour le calendar picker */
 .dark input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(100%);
+}
+
+/* Format du texte dans les dates */
+input[type="date"]::-webkit-datetime-edit {
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
+
+input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+  padding: 0;
+}
+
+/* S'assurer que tous les inputs number ont aussi la même hauteur */
+input[type="number"] {
+  height: 42px !important;
+  min-height: 42px !important;
+  box-sizing: border-box !important;
 }
 
 /* Hide reCAPTCHA badge */
