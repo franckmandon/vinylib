@@ -12,6 +12,15 @@ function LoginForm() {
   const { data: session, status } = useSession();
   const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "";
   const { executeRecaptcha } = useReCaptcha(siteKey);
+
+  // Debug: Log site key status
+  useEffect(() => {
+    if (!siteKey) {
+      console.error("[login] NEXT_PUBLIC_RECAPTCHA_SITE_KEY is not set!");
+    } else {
+      console.log("[login] reCAPTCHA site key is set:", siteKey.substring(0, 10) + "...");
+    }
+  }, [siteKey]);
   const [emailOrUsername, setEmailOrUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -59,11 +68,25 @@ function LoginForm() {
       let recaptchaToken: string | null = null;
       if (siteKey) {
         try {
+          console.log("[login] Attempting to execute reCAPTCHA...");
           recaptchaToken = await executeRecaptcha("login");
-          console.log("[login] reCAPTCHA token obtained");
+          if (!recaptchaToken) {
+            console.error("[login] reCAPTCHA token is null");
+            setError("reCAPTCHA verification failed. Please try again.");
+            setLoading(false);
+            return;
+          }
+          console.log("[login] reCAPTCHA token obtained successfully");
         } catch (recaptchaError) {
           console.error("[login] reCAPTCHA error:", recaptchaError);
           setError("reCAPTCHA verification failed. Please try again.");
+          setLoading(false);
+          return;
+        }
+      } else {
+        console.error("[login] reCAPTCHA site key is not set!");
+        if (process.env.NODE_ENV === "production") {
+          setError("reCAPTCHA configuration error. Please contact support.");
           setLoading(false);
           return;
         }
