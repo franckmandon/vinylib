@@ -992,7 +992,7 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                   max={new Date().toISOString().split("T")[0]}
                   disabled={!isEditMode}
                   readOnly={!isEditMode}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed text-left"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                 />
               </div>
               <div>
@@ -1193,7 +1193,7 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                           }));
                         }}
                         max={new Date().toISOString().split("T")[0]}
-                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none"
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                       />
                     ) : (
                       <input
