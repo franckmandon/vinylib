@@ -9,7 +9,6 @@ export default function UserMenu() {
   const { data: session } = useSession();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close menu when clicking outside
@@ -28,37 +27,6 @@ export default function UserMenu() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isOpen]);
-
-  const handleDeleteAccount = async () => {
-    if (!session?.user?.id) return;
-
-    const confirmed = confirm(
-      "Are you sure you want to delete your account? This action cannot be undone. All your vinyls will be removed from your collection."
-    );
-
-    if (!confirmed) return;
-
-    setIsDeleting(true);
-
-    try {
-      const response = await fetch("/api/auth/delete-account", {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        // Sign out and redirect to home
-        await signOut({ callbackUrl: "/" });
-      } else {
-        const error = await response.json();
-        alert(error.error || "Failed to delete account. Please try again.");
-        setIsDeleting(false);
-      }
-    } catch (error) {
-      console.error("Error deleting account:", error);
-      alert("An error occurred. Please try again.");
-      setIsDeleting(false);
-    }
-  };
 
   if (!session?.user) {
     return null;
@@ -123,17 +91,19 @@ export default function UserMenu() {
           <Link
             href="/shuffle"
             onClick={() => setIsOpen(false)}
-            className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-bold"
+            className="block px-4 py-2 text-sm font-bold transition-colors hover:bg-slate-100 dark:hover:bg-slate-700"
+            style={{ color: 'rgb(255 0 150)' }}
           >
             Shuffle Playlist
           </Link>
-          <button
-            onClick={handleDeleteAccount}
-            disabled={isDeleting}
-            className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          <div className="border-t border-slate-200 dark:border-slate-700 my-1"></div>
+          <Link
+            href="/settings"
+            onClick={() => setIsOpen(false)}
+            className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
           >
-            {isDeleting ? "Deleting..." : "Delete Account"}
-          </button>
+            Settings
+          </Link>
         </div>
       )}
     </div>

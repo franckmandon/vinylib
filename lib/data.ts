@@ -465,7 +465,7 @@ export async function deleteVinyl(id: string, userId?: string): Promise<boolean>
 }
 
 // User management functions
-async function getUsers(): Promise<User[]> {
+export async function getUsers(): Promise<User[]> {
   const client = await getRedisClient();
   if (client) {
     try {
@@ -498,7 +498,7 @@ async function getUsers(): Promise<User[]> {
   return [];
 }
 
-async function saveUsers(users: User[]): Promise<void> {
+export async function saveUsers(users: User[]): Promise<void> {
   const client = await getRedisClient();
   if (client) {
     try {
