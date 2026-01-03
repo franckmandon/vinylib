@@ -10,11 +10,14 @@ import VinylForm from "@/components/VinylForm";
 import SearchBar from "@/components/SearchBar";
 import UserMenu from "@/components/UserMenu";
 import ThemeToggle from "@/components/ThemeToggle";
+import { useReCaptcha } from "@/hooks/useReCaptcha";
 import { Vinyl } from "@/types/vinyl";
 
 export default function BookmarksPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "";
+  const { executeRecaptcha } = useReCaptcha(siteKey);
   const [bookmarks, setBookmarks] = useState<BookmarkWithVinyl[]>([]);
   const [filteredBookmarks, setFilteredBookmarks] = useState<BookmarkWithVinyl[]>([]);
   const [userVinyls, setUserVinyls] = useState<Vinyl[]>([]);
@@ -155,6 +158,23 @@ export default function BookmarksPage() {
 
   const handleAddToCollection = async (vinyl: Vinyl) => {
     try {
+      // Execute reCAPTCHA
+      let recaptchaToken = "";
+      if (siteKey) {
+        try {
+          const token = await executeRecaptcha("add_vinyl");
+          if (!token) {
+            alert("reCAPTCHA verification failed. Please try again.");
+            return;
+          }
+          recaptchaToken = token;
+        } catch (error) {
+          console.error("Error executing reCAPTCHA:", error);
+          alert("reCAPTCHA verification failed. Please try again.");
+          return;
+        }
+      }
+
       // Add vinyl to collection using existing data
       const response = await fetch("/api/vinyls", {
         method: "POST",
@@ -171,6 +191,7 @@ export default function BookmarksPage() {
           ean: vinyl.ean,
           rating: vinyl.rating,
           spotifyLink: vinyl.spotifyLink,
+          recaptchaToken,
         }),
       });
 
