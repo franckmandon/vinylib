@@ -194,19 +194,25 @@ export default function ShufflePage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {shuffledVinyls.map((vinyl) => (
-              <VinylCard
-                key={vinyl.id}
-                vinyl={vinyl}
-                onEdit={handleViewDetails}
-                isLoggedIn={!!session?.user}
-                isOwner={false}
-                showOwners={true}
-                onOwnerClick={(username, userId) => {
-                  router.push(`/?owner=${encodeURIComponent(username)}&ownerId=${encodeURIComponent(userId)}`);
-                }}
-              />
-            ))}
+            {shuffledVinyls.map((vinyl) => {
+              const ownsVinyl = session?.user?.id && (
+                vinyl.userId === session.user.id || 
+                vinyl.owners?.some(o => o.userId === session.user.id)
+              );
+              return (
+                <VinylCard
+                  key={vinyl.id}
+                  vinyl={vinyl}
+                  onEdit={handleViewDetails}
+                  isLoggedIn={!!session?.user}
+                  isOwner={!!ownsVinyl}
+                  showOwners={true}
+                  onOwnerClick={(username, userId) => {
+                    router.push(`/?owner=${encodeURIComponent(username)}&ownerId=${encodeURIComponent(userId)}`);
+                  }}
+                />
+              );
+            })}
           </div>
         )}
       </div>

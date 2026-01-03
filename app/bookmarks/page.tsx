@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { BookmarkWithVinyl } from "@/types/bookmark";
 import VinylCard from "@/components/VinylCard";
+import VinylListItem from "@/components/VinylListItem";
 import VinylForm from "@/components/VinylForm";
 import SearchBar from "@/components/SearchBar";
 import UserMenu from "@/components/UserMenu";
@@ -27,6 +28,7 @@ export default function BookmarksPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"artist" | "album" | "releaseDate" | "rating" | "dateAdded" | "ownerCount">("dateAdded");
   const [selectedGenre, setSelectedGenre] = useState("");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -301,6 +303,9 @@ export default function BookmarksPage() {
             selectedGenre={selectedGenre}
             onGenreChange={setSelectedGenre}
             availableGenres={getAvailableGenres()}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            showViewToggle={true}
           />
         </div>
 
@@ -313,7 +318,7 @@ export default function BookmarksPage() {
           <div className="text-center py-12 text-slate-600 dark:text-slate-400">
             <p className="text-lg mb-2">No bookmarks match your search</p>
           </div>
-        ) : (
+        ) : viewMode === "grid" ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredBookmarks.map((bookmark) => {
               const isInCollection = isVinylInCollection(bookmark.vinyl.id);
@@ -354,6 +359,66 @@ export default function BookmarksPage() {
                 />
               );
             })}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b-2 border-slate-300 dark:border-slate-600">
+                  <th className="p-3 text-left text-sm font-semibold text-slate-700 dark:text-slate-300 sticky left-0 z-20 md:static bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 md:bg-transparent md:dark:bg-transparent shadow-[2px_0_4px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_4px_rgba(0,0,0,0.3)] md:shadow-none">Cover</th>
+                  <th className="p-3 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">Artist</th>
+                  <th className="p-3 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">Album</th>
+                  <th className="p-3 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">Genre</th>
+                  <th className="p-3 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">Rating</th>
+                  <th className="p-3 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">Owners</th>
+                  <th className="p-3 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredBookmarks.map((bookmark) => {
+                  const isInCollection = isVinylInCollection(bookmark.vinyl.id);
+                  return (
+                    <VinylListItem
+                      key={bookmark.id}
+                      vinyl={bookmark.vinyl}
+                      onEdit={handleViewDetails}
+                      isLoggedIn={true}
+                      isOwner={isInCollection}
+                      showOwners={true}
+                      hideBookmark={true}
+                      onOwnerClick={(username, userId) => {
+                        router.push(`/?owner=${encodeURIComponent(username)}&ownerId=${encodeURIComponent(userId)}`);
+                      }}
+                      customButtons={
+                        <>
+                          <button
+                            onClick={() => handleViewDetails(bookmark.vinyl)}
+                            className="px-3 py-1.5 bg-slate-600 hover:bg-slate-700 text-white text-sm rounded transition-colors"
+                          >
+                            Details
+                          </button>
+                          <button
+                            onClick={() => handleAddToCollection(bookmark.vinyl)}
+                            className="px-3 py-1.5 text-white text-sm rounded transition-colors"
+                            style={{ backgroundColor: '#534AD3' }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4338A8'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#534AD3'}
+                          >
+                            Add vinyl
+                          </button>
+                          <button
+                            onClick={() => handleDeleteBookmark(bookmark.vinylId)}
+                            className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors"
+                          >
+                            Remove
+                          </button>
+                        </>
+                      }
+                    />
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
 

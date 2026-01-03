@@ -368,7 +368,7 @@ export default function VinylLibrary({ mode = "public", hideSearch = false, limi
           <table className="w-full border-collapse">
             <thead>
               <tr className="border-b-2 border-slate-300 dark:border-slate-600">
-                <th className="p-3 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">Cover</th>
+                <th className="p-3 text-left text-sm font-semibold text-slate-700 dark:text-slate-300 sticky left-0 z-20 md:static bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 md:bg-transparent md:dark:bg-transparent shadow-[2px_0_4px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_4px_rgba(0,0,0,0.3)] md:shadow-none">Cover</th>
                 <th className="p-3 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">Artist</th>
                 <th className="p-3 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">Album</th>
                 <th className="p-3 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">Genre</th>
@@ -391,7 +391,7 @@ export default function VinylLibrary({ mode = "public", hideSearch = false, limi
                     onDelete={ownsVinyl ? handleDeleteVinyl : undefined}
                     isLoggedIn={isLoggedIn}
                     isOwner={!!ownsVinyl}
-                    showOwners={!isPersonalMode} // Show owners on public page
+                    showOwners={true}
                     onOwnerClick={(username, userId) => {
                       router.push(`/?owner=${encodeURIComponent(username)}&ownerId=${encodeURIComponent(userId)}`);
                     }}

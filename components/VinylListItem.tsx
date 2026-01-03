@@ -173,7 +173,7 @@ export default function VinylListItem({
   return (
     <tr className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
       {/* Thumbnail */}
-      <td className="p-3">
+      <td className="p-3 sticky left-0 z-10 md:static bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 md:bg-transparent md:dark:bg-transparent shadow-[2px_0_4px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_4px_rgba(0,0,0,0.3)] md:shadow-none">
         <div 
           className="relative w-[100px] h-[100px] rounded overflow-hidden bg-slate-200 dark:bg-slate-700 cursor-pointer hover:opacity-90 transition-opacity"
           onClick={() => onEdit(vinyl)}
@@ -217,10 +217,10 @@ export default function VinylListItem({
 
       {/* Rating */}
       <td className="p-3">
-        {(ratingInfo.average > 0 || (isLoggedIn && !isOwner)) && (
+        {isLoggedIn && (
           <StarRating 
-            rating={isLoggedIn && !isOwner ? (userRating || ratingInfo.average) : ratingInfo.average} 
-            onRatingChange={isLoggedIn && !isOwner ? async (rating) => {
+            rating={isOwner ? (userRating || ratingInfo.average) : (userRating || ratingInfo.average)} 
+            onRatingChange={async (rating) => {
               try {
                 const response = await fetch(`/api/vinyls/${vinyl.id}/rating`, {
                   method: "POST",
@@ -238,8 +238,16 @@ export default function VinylListItem({
               } catch (error) {
                 console.error("Error updating rating:", error);
               }
-            } : undefined}
-            readonly={!isLoggedIn || isOwner} 
+            }}
+            readonly={false} 
+            size="sm"
+            reviewCount={ratingInfo.count}
+          />
+        )}
+        {!isLoggedIn && ratingInfo.average > 0 && (
+          <StarRating 
+            rating={ratingInfo.average} 
+            readonly={true} 
             size="sm"
             reviewCount={ratingInfo.count}
           />
@@ -258,23 +266,45 @@ export default function VinylListItem({
             customButtons
           ) : (
             <>
-              {isLoggedIn && isOwner ? (
+              {isLoggedIn ? (
                 <>
                   <button
-                    onClick={() => onEdit(vinyl)}
-                    className="px-3 py-1.5 text-white text-sm rounded transition-colors"
-                    style={{ backgroundColor: '#534AD3' }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4338A8'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#534AD3'}
+                    onClick={handleViewDetails}
+                    className="px-3 py-1.5 bg-slate-600 hover:bg-slate-700 text-white text-sm rounded transition-colors"
                   >
-                    Edit
+                    Details
                   </button>
-                  {onDelete && (
+                  {!isOwner && !hideBookmark && (
                     <button
-                      onClick={() => onDelete(vinyl.id)}
-                      className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors"
+                      onClick={handleBookmarkClick}
+                      disabled={isToggling}
+                      className="p-1.5 text-slate-600 dark:text-slate-400 transition-colors disabled:opacity-50"
+                      style={{ color: isBookmarked ? 'rgb(255 0 150)' : undefined }}
+                      onMouseEnter={(e) => {
+                        if (!e.currentTarget.disabled && !isBookmarked) {
+                          e.currentTarget.style.color = 'rgb(83 74 211)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!e.currentTarget.disabled && !isBookmarked) {
+                          e.currentTarget.style.color = '';
+                        }
+                      }}
+                      aria-label={isBookmarked ? "Remove bookmark" : "Add bookmark"}
                     >
-                      Delete
+                      <svg
+                        className="w-5 h-5"
+                        fill={isBookmarked ? "currentColor" : "none"}
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                        />
+                      </svg>
                     </button>
                   )}
                 </>
@@ -291,8 +321,17 @@ export default function VinylListItem({
                       onClick={handleBookmarkClick}
                       disabled={isToggling}
                       className="p-1.5 text-slate-600 dark:text-slate-400 transition-colors disabled:opacity-50"
-                      onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.color = 'rgb(83 74 211)')}
-                      onMouseLeave={(e) => !e.currentTarget.disabled && (e.currentTarget.style.color = '')}
+                      style={{ color: isBookmarked ? 'rgb(255 0 150)' : undefined }}
+                      onMouseEnter={(e) => {
+                        if (!e.currentTarget.disabled && !isBookmarked) {
+                          e.currentTarget.style.color = 'rgb(83 74 211)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!e.currentTarget.disabled && !isBookmarked) {
+                          e.currentTarget.style.color = '';
+                        }
+                      }}
                       aria-label={isBookmarked ? "Remove bookmark" : "Add bookmark"}
                     >
                       <svg
