@@ -992,7 +992,7 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                   max={new Date().toISOString().split("T")[0]}
                   disabled={!isEditMode}
                   readOnly={!isEditMode}
-                  className="w-full h-[42px] px-4 pr-10 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed text-sm"
+                  className={`w-full border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed ${!isEditMode ? 'px-3 py-2 md:h-[42px] md:px-4 md:pr-10 md:text-sm' : 'h-[42px] px-4 pr-10 text-sm'}`}
                 />
               </div>
               <div>
