@@ -45,7 +45,7 @@ input[type="date"] {
   box-sizing: border-box !important;
   display: block !important;
   width: 100% !important;
-  text-align: left !important;
+  text-align: left !important; /* ← Ajoute cette ligne */
 }
 
 /* Uniformiser la largeur en mode disabled/readonly */
@@ -56,6 +56,7 @@ input[type="date"][readonly] {
   max-height: 42px !important;
   padding: 0.5rem 0.75rem !important;
   padding-right: 2.5rem !important;
+  text-align: left !important; /* ← Ajoute cette ligne aussi */
 }
 
 /* Icône du calendrier */
@@ -73,15 +74,17 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(100%);
 }
 
-/* Format du texte dans les dates */
+/* Format du texte dans les dates - alignement à gauche */
 input[type="date"]::-webkit-datetime-edit {
   padding: 0;
   display: flex;
   align-items: center;
+  text-align: left !important; /* ← Ajoute cette ligne */
 }
 
 input[type="date"]::-webkit-datetime-edit-fields-wrapper {
   padding: 0;
+  text-align: left !important; /* ← Ajoute cette ligne */
 }
 
 /* S'assurer que tous les inputs number ont aussi la même hauteur */
