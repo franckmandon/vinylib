@@ -10,18 +10,45 @@ const getResendClient = () => {
 };
 
 export async function sendWelcomeEmail(email: string, username: string) {
-  if (!process.env.RESEND_API_KEY) {
-    console.error("[email] RESEND_API_KEY not configured");
-    throw new Error("RESEND_API_KEY is not configured");
-  }
-
   // Use verified domain or fallback to Resend's test domain
   // Format: "Name <email@domain.com>" or just "email@domain.com"
   const fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
   
-  console.log("[email] Sending welcome email to:", email);
-  console.log("[email] From email:", fromEmail);
+  console.log("[email] ========================================");
+  console.log("[email] WELCOME EMAIL");
+  console.log("[email] ========================================");
+  console.log("[email] To:", email);
+  console.log("[email] From email (sender):", fromEmail);
   console.log("[email] RESEND_API_KEY configured:", !!process.env.RESEND_API_KEY);
+  console.log("[email] RESEND_FROM_EMAIL:", process.env.RESEND_FROM_EMAIL || "not set (using default)");
+  console.log("[email] NODE_ENV:", process.env.NODE_ENV);
+
+  // In development mode without RESEND_API_KEY, simulate email sending
+  if (process.env.NODE_ENV === "development" && !process.env.RESEND_API_KEY) {
+    console.log("[email] ⚠️  DEVELOPMENT MODE: RESEND_API_KEY not configured");
+    console.log("[email] ⚠️  Simulating email send (email will NOT be sent)");
+    console.log("[email] ========================================");
+    console.log("[email] EMAIL DETAILS (would be sent):");
+    console.log("[email] Subject: Welcome to Vinyl Report!");
+    console.log("[email] To:", email);
+    console.log("[email] From:", fromEmail);
+    console.log("[email] Username:", username);
+    console.log("[email] ========================================");
+    console.log("[email] To actually send emails, configure RESEND_API_KEY in .env.local");
+    console.log("[email] ========================================");
+    
+    // Return a mock result
+    return {
+      id: "dev-simulated-email-id",
+      from: fromEmail,
+      to: email,
+    };
+  }
+
+  if (!process.env.RESEND_API_KEY) {
+    console.error("[email] RESEND_API_KEY not configured");
+    throw new Error("RESEND_API_KEY is not configured");
+  }
 
   try {
     const resend = getResendClient();

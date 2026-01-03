@@ -114,13 +114,17 @@ export async function POST(request: NextRequest) {
     
     const user = await createUser(email, username, password);
     
-    // Send welcome email (don't wait for it to complete)
-    sendWelcomeEmail(user.email, user.username).catch((error: any) => {
+    // Send welcome email (don't fail registration if email fails)
+    try {
+      console.log("[register] Attempting to send welcome email to:", user.email);
+      await sendWelcomeEmail(user.email, user.username);
+      console.log("[register] Welcome email sent successfully");
+    } catch (error: any) {
       console.error("[register] Failed to send welcome email:", error);
       console.error("[register] Error message:", error?.message);
       console.error("[register] Error details:", JSON.stringify(error, null, 2));
-      // Don't fail registration if email fails
-    });
+      // Don't fail registration if email fails - user is already created
+    }
     
     // Don't return password
     const { password: _, ...userPublic } = user;
