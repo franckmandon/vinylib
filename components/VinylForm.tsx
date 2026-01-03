@@ -992,10 +992,7 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                   max={new Date().toISOString().split("T")[0]}
                   disabled={!isEditMode}
                   readOnly={!isEditMode}
-                  className={!isEditMode 
-                    ? "w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
-                    : "w-full h-[42px] px-4 pr-10 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none text-sm"
-                  }
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                 />
               </div>
               <div>
@@ -1196,7 +1193,7 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                           }));
                         }}
                         max={new Date().toISOString().split("T")[0]}
-                        className="date-added-input w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none"
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                       />
                     ) : (
                       <input
