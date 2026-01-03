@@ -13,6 +13,8 @@ Ce document explique comment configurer reCAPTCHA v3 pour protéger les formulai
 
 ## 2. Configuration des variables d'environnement
 
+### Développement local
+
 Ajoutez les variables suivantes dans votre fichier `.env.local` :
 
 ```env
@@ -27,6 +29,30 @@ RECAPTCHA_SCORE_THRESHOLD=0.5
 # Optionnel: URL de base pour la vérification (pour le développement local)
 NEXT_PUBLIC_BASE_URL=http://localhost:3000
 ```
+
+### Production (Vercel)
+
+**IMPORTANT** : Les variables d'environnement doivent être configurées sur Vercel pour que reCAPTCHA fonctionne en production.
+
+1. Allez sur [https://vercel.com](https://vercel.com)
+2. Sélectionnez votre projet
+3. Allez dans **Settings** → **Environment Variables**
+4. Ajoutez les variables suivantes pour **Production**, **Preview**, et **Development** :
+
+```
+NEXT_PUBLIC_RECAPTCHA_SITE_KEY=votre_site_key_ici
+RECAPTCHA_SECRET_KEY=votre_secret_key_ici
+```
+
+**Note importante** :
+- `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` doit être la même clé que celle utilisée en développement (celle qui a `vinyl.report` et `localhost` dans les domaines autorisés)
+- `RECAPTCHA_SECRET_KEY` doit être la clé secrète correspondante
+- Assurez-vous de sélectionner **Production**, **Preview**, et **Development** lors de l'ajout des variables
+
+5. Après avoir ajouté les variables, **redéployez votre application** :
+   - Allez dans **Deployments**
+   - Cliquez sur **Redeploy** sur le dernier déploiement
+   - Ou faites un nouveau commit pour déclencher un nouveau déploiement
 
 ## 3. Installation
 
@@ -99,6 +125,37 @@ Ces actions apparaissent dans la console Google reCAPTCHA pour l'analyse.
 - Ajustez `RECAPTCHA_SCORE_THRESHOLD` (par défaut 0.5)
 - Vérifiez dans la console Google reCAPTCHA les scores moyens
 - Certains comportements peuvent être considérés comme suspects (VPN, proxies, etc.)
+
+### reCAPTCHA fonctionne en localhost mais pas en production
+**C'est le problème le plus courant !** Les variables d'environnement ne sont pas automatiquement synchronisées entre votre machine locale et Vercel.
+
+**Solution :**
+
+1. **Vérifiez que les variables sont bien configurées sur Vercel** :
+   - Allez sur [https://vercel.com](https://vercel.com)
+   - Sélectionnez votre projet
+   - Allez dans **Settings** → **Environment Variables**
+   - Vérifiez que `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` et `RECAPTCHA_SECRET_KEY` sont présentes
+   - **IMPORTANT** : Assurez-vous qu'elles sont activées pour **Production** (pas seulement Development ou Preview)
+
+2. **Utilisez les mêmes clés** :
+   - La même `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` doit être utilisée en local et en production
+   - C'est pour cela que vous avez ajouté à la fois `localhost` et `vinyl.report` dans les domaines autorisés de Google reCAPTCHA
+
+3. **Redéployez après avoir ajouté/modifié les variables** :
+   - Les variables d'environnement ne sont appliquées qu'aux nouveaux déploiements
+   - Allez dans **Deployments** sur Vercel
+   - Cliquez sur **Redeploy** sur le dernier déploiement
+   - Ou faites un nouveau commit pour déclencher un nouveau déploiement
+
+4. **Vérifiez les logs Vercel** :
+   - Allez dans **Deployments** → Sélectionnez un déploiement → **Logs**
+   - Cherchez les erreurs liées à reCAPTCHA
+
+5. **Vérifiez la console du navigateur en production** :
+   - Ouvrez `https://vinyl.report` dans votre navigateur
+   - Ouvrez la console développeur (F12)
+   - Vérifiez s'il y a des erreurs reCAPTCHA
 
 ## 10. Documentation officielle
 
