@@ -67,7 +67,7 @@ export default function ShufflePage() {
       <main className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
         <div className="container mx-auto px-4 py-8">
           <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: 'rgb(83 74 211)' }}></div>
             <p className="mt-4 text-slate-600 dark:text-slate-400">Loading your shuffle playlist...</p>
           </div>
         </div>
@@ -144,15 +144,15 @@ export default function ShufflePage() {
             onClick={handleRefresh}
             disabled={refreshing}
             className="flex items-center justify-center gap-2 px-4 py-2 text-white rounded-lg text-base font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed md:w-auto w-full"
-            style={{ backgroundColor: 'rgb(37 99 235)' }}
+            style={{ backgroundColor: '#534AD3' }}
             onMouseEnter={(e) => {
               if (!refreshing) {
-                e.currentTarget.style.backgroundColor = 'rgb(29 78 216)';
+                e.currentTarget.style.backgroundColor = '#4338A8';
               }
             }}
             onMouseLeave={(e) => {
               if (!refreshing) {
-                e.currentTarget.style.backgroundColor = 'rgb(37 99 235)';
+                e.currentTarget.style.backgroundColor = '#534AD3';
               }
             }}
           >

@@ -4,9 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import UserMenu from "@/components/UserMenu";
+import { useReCaptcha } from "@/hooks/useReCaptcha";
 
 export default function ContactPage() {
   const { data: session } = useSession();
+  const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "";
+  const { executeRecaptcha } = useReCaptcha(siteKey);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -29,17 +32,32 @@ export default function ContactPage() {
     setIsSubmitting(true);
 
     try {
+      // Execute reCAPTCHA
+      let recaptchaToken: string | null = null;
+      if (siteKey) {
+        try {
+          recaptchaToken = await executeRecaptcha("contact_form");
+          console.log("[contact-form] reCAPTCHA token obtained");
+        } catch (recaptchaError) {
+          console.error("[contact-form] reCAPTCHA error:", recaptchaError);
+          setError("reCAPTCHA verification failed. Please try again.");
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       const formData = {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         email: email.trim(),
         companyName: companyName.trim() || undefined,
         country: country.trim() || undefined,
-        message: message.trim()
+        message: message.trim(),
+        recaptchaToken: recaptchaToken || undefined,
       };
 
       console.log("[contact-form] Sending request to /api/contact");
-      console.log("[contact-form] Request data:", formData);
+      console.log("[contact-form] Request data:", { ...formData, recaptchaToken: recaptchaToken ? "***" : undefined });
 
       // Create AbortController for timeout handling
       const controller = new AbortController();
@@ -151,7 +169,10 @@ export default function ContactPage() {
                 setSuccess(false);
                 setError("");
               }}
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+              className="px-6 py-2 text-white rounded-lg font-medium transition-colors"
+              style={{ backgroundColor: '#534AD3' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4338A8'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#534AD3'}
             >
               Send Another Message
             </button>
@@ -187,7 +208,13 @@ export default function ContactPage() {
                 onChange={(e) => setFirstName(e.target.value)}
                 required
                 autoComplete="given-name"
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none"
+                onFocus={(e) => {
+                  e.currentTarget.style.boxShadow = '0 0 0 2px rgb(83 74 211)';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.boxShadow = '';
+                }}
                 placeholder="John"
                 disabled={isSubmitting}
               />
@@ -207,7 +234,13 @@ export default function ContactPage() {
                 onChange={(e) => setLastName(e.target.value)}
                 required
                 autoComplete="family-name"
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none"
+                onFocus={(e) => {
+                  e.currentTarget.style.boxShadow = '0 0 0 2px rgb(83 74 211)';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.boxShadow = '';
+                }}
                 placeholder="Doe"
                 disabled={isSubmitting}
               />
@@ -229,7 +262,7 @@ export default function ContactPage() {
               required
               autoComplete="email"
               inputMode="email"
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none"
               placeholder="your.email@example.com"
               disabled={isSubmitting}
             />
@@ -247,7 +280,7 @@ export default function ContactPage() {
               id="companyName"
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none"
               placeholder="Your Company"
               disabled={isSubmitting}
             />
@@ -265,7 +298,7 @@ export default function ContactPage() {
               id="country"
               value={country}
               onChange={(e) => setCountry(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none"
               placeholder="Your Country"
               disabled={isSubmitting}
             />
@@ -284,7 +317,7 @@ export default function ContactPage() {
               onChange={(e) => setMessage(e.target.value)}
               required
               rows={6}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 resize-y focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 resize-y focus:outline-none"
               placeholder="Tell us how we can help you..."
               disabled={isSubmitting}
             />
@@ -297,7 +330,8 @@ export default function ContactPage() {
             By submitting your details, you confirm that you would like to receive marketing emails from Vinyl Report and you agree to the storing and processing of your personal data by Vinyl Report as described in our{" "}
             <Link
               href="/privacy-policy"
-              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium underline"
+              className="hover:text-blue-700 dark:hover:text-blue-300 font-medium underline"
+              style={{ color: 'rgb(83 74 211)' }}
             >
               Privacy Policy
             </Link>
@@ -307,11 +341,18 @@ export default function ContactPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
+            className="w-full px-4 py-2 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
+            style={{ backgroundColor: '#534AD3' }}
+            onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#4338A8')}
+            onMouseLeave={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#534AD3')}
           >
             {isSubmitting ? "Sending..." : "Send Message"}
             </button>
-          </form>
+        </form>
+
+        <p className="mt-4 text-center text-xs text-slate-500 dark:text-slate-400">
+          Ce site est protégé par reCAPTCHA
+        </p>
           </>
         )}
 

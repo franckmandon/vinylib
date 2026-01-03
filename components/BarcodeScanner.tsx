@@ -255,11 +255,11 @@ export default function BarcodeScanner({
             />
             {scanning && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="border-2 border-blue-500 rounded-lg" style={{ width: "250px", height: "250px" }}>
-                  <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-blue-500"></div>
-                  <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-blue-500"></div>
-                  <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-blue-500"></div>
-                  <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-blue-500"></div>
+                <div className="border-2 rounded-lg" style={{ width: "250px", height: "250px", borderColor: 'rgb(83 74 211)' }}>
+                  <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2" style={{ borderColor: 'rgb(83 74 211)' }}></div>
+                  <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2" style={{ borderColor: 'rgb(83 74 211)' }}></div>
+                  <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2" style={{ borderColor: 'rgb(83 74 211)' }}></div>
+                  <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2" style={{ borderColor: 'rgb(83 74 211)' }}></div>
                 </div>
               </div>
             )}
@@ -275,7 +275,10 @@ export default function BarcodeScanner({
             {!scanning ? (
               <button
                 onClick={startScanning}
-                className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                className="flex-1 px-4 py-2 text-white rounded-lg font-medium transition-colors"
+                style={{ backgroundColor: '#534AD3' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4338A8'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#534AD3'}
               >
                 Start Scanning
               </button>
@@ -302,7 +305,14 @@ export default function BarcodeScanner({
             💡 Astuce: Assurez-vous d&apos;avoir un bon éclairage et maintenez le code-barres stable.
           </p>
           {!window.isSecureContext && window.location.protocol !== 'https:' && window.location.hostname !== 'localhost' && (
-            <div className="mt-2 p-2 bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-400 dark:border-yellow-700 rounded text-yellow-700 dark:text-yellow-300 text-xs text-center">
+            <div className="mt-2 p-2 rounded text-xs text-center"
+              style={{
+                backgroundColor: 'rgba(255, 0, 150, 0.1)',
+                borderColor: 'rgba(255, 0, 150, 0.4)',
+                borderWidth: '1px',
+                borderStyle: 'solid',
+                color: 'rgb(255 0 150)'
+              }}>
               ⚠️ La caméra ne fonctionne pas en HTTP. Utilisez HTTPS ou localhost pour accéder à la caméra depuis votre iPhone.
             </div>
           )}

@@ -153,7 +153,8 @@ export default function VinylListItem({
                   e.stopPropagation();
                   onOwnerClick(owner.username, owner.userId);
                 }}
-                className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                className="text-xs hover:underline"
+                style={{ color: 'rgb(83 74 211)' }}
               >
                 {owner.username}
               </button>
@@ -261,7 +262,10 @@ export default function VinylListItem({
                 <>
                   <button
                     onClick={() => onEdit(vinyl)}
-                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition-colors"
+                    className="px-3 py-1.5 text-white text-sm rounded transition-colors"
+                    style={{ backgroundColor: '#534AD3' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4338A8'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#534AD3'}
                   >
                     Edit
                   </button>
@@ -286,7 +290,9 @@ export default function VinylListItem({
                     <button
                       onClick={handleBookmarkClick}
                       disabled={isToggling}
-                      className="p-1.5 text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors disabled:opacity-50"
+                      className="p-1.5 text-slate-600 dark:text-slate-400 transition-colors disabled:opacity-50"
+                      onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.color = 'rgb(83 74 211)')}
+                      onMouseLeave={(e) => !e.currentTarget.disabled && (e.currentTarget.style.color = '')}
                       aria-label={isBookmarked ? "Remove bookmark" : "Add bookmark"}
                     >
                       <svg

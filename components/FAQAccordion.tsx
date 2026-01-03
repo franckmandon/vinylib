@@ -278,7 +278,7 @@ export default function FAQAccordion({ faq, index }: FAQAccordionProps) {
                   const trimmedContent = content.trim();
                   // Don't add line break after "Personal Documentation"
                   if (trimmedContent === 'Personal Documentation') {
-                    return `<strong style="color: rgb(147 197 253); font-weight: bold;">${content}</strong>`;
+                    return `<strong style="color: rgb(165 161 232); font-weight: bold;">${content}</strong>`;
                   }
                   // Don't format these specific list items in blue, but keep line break
                   const excludedItems = [
@@ -299,7 +299,7 @@ export default function FAQAccordion({ faq, index }: FAQAccordionProps) {
                     return `<strong>${content}</strong><br />`;
                   }
                   
-                  return `<strong style="color: rgb(147 197 253); font-weight: bold;">${content}</strong><br />`;
+                  return `<strong style="color: rgb(165 161 232); font-weight: bold;">${content}</strong><br />`;
                 })
             }}
           />

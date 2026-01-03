@@ -49,7 +49,37 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const data: VinylFormData = await request.json();
+    const body = await request.json();
+    const { recaptchaToken, ...data } = body;
+    
+    // Verify reCAPTCHA if token is provided
+    if (recaptchaToken) {
+      try {
+        const verifyResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/recaptcha/verify`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ token: recaptchaToken }),
+        });
+
+        if (!verifyResponse.ok) {
+          const verifyData = await verifyResponse.json();
+          console.error("[vinyls] reCAPTCHA verification failed:", verifyData);
+          return NextResponse.json(
+            { error: "reCAPTCHA verification failed. Please try again." },
+            { status: 400 }
+          );
+        }
+        console.log("[vinyls] reCAPTCHA verified successfully");
+      } catch (error) {
+        console.error("[vinyls] Error verifying reCAPTCHA:", error);
+        return NextResponse.json(
+          { error: "reCAPTCHA verification failed. Please try again." },
+          { status: 400 }
+        );
+      }
+    }
     
     if (!data.artist || !data.album) {
       return NextResponse.json(

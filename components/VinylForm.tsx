@@ -7,6 +7,7 @@ import Image from "next/image";
 import { Vinyl, VinylFormData } from "@/types/vinyl";
 import StarRating from "./StarRating";
 import BarcodeScanner from "./BarcodeScanner";
+import { useReCaptcha } from "@/hooks/useReCaptcha";
 
 interface VinylFormProps {
   vinyl?: Vinyl | null;
@@ -19,6 +20,8 @@ interface VinylFormProps {
 export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false, onSelectVinyl }: VinylFormProps) {
   const { data: session } = useSession();
   const router = useRouter();
+  const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "";
+  const { executeRecaptcha } = useReCaptcha(siteKey);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<VinylFormData>({
     artist: "",
@@ -357,11 +360,25 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
     setLoading(true);
 
     try {
+      // Execute reCAPTCHA only for new vinyls (POST), not for updates (PUT)
+      let recaptchaToken: string | null = null;
+      if (!vinyl && siteKey) {
+        try {
+          recaptchaToken = await executeRecaptcha("add_vinyl");
+          console.log("[vinyl-form] reCAPTCHA token obtained");
+        } catch (recaptchaError) {
+          console.error("[vinyl-form] reCAPTCHA error:", recaptchaError);
+          alert("reCAPTCHA verification failed. Please try again.");
+          setLoading(false);
+          return;
+        }
+      }
+
       const url = "/api/vinyls";
       const method = vinyl ? "PUT" : "POST";
       const body = vinyl
         ? { id: vinyl.id, ...formData }
-        : formData;
+        : { ...formData, recaptchaToken: recaptchaToken || undefined };
 
       const response = await fetch(url, {
         method,
@@ -812,7 +829,7 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
       {isLoadingAfterScan && !showChoiceDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-[100]">
           <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-md w-full p-8 flex flex-col items-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 mb-4" style={{ borderColor: 'rgb(83 74 211)' }}></div>
             <p className="text-lg font-medium text-slate-900 dark:text-slate-100">
               Fetching vinyl information...
             </p>
@@ -825,7 +842,7 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
       {loadingEAN && !isLoadingAfterScan && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-[100]">
           <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-md w-full p-8 flex flex-col items-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 mb-4" style={{ borderColor: 'rgb(83 74 211)' }}></div>
             <p className="text-lg font-medium text-slate-900 dark:text-slate-100">
               Searching for product information...
             </p>
@@ -867,7 +884,10 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
             <div className="flex flex-col gap-3">
               <button
                 onClick={handleAddToCollection}
-                className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                className="w-full px-4 py-3 text-white rounded-lg font-medium transition-colors"
+                style={{ backgroundColor: '#534AD3' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4338A8'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#534AD3'}
               >
                 Add to Collection
               </button>
@@ -942,7 +962,7 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                   required={isEditMode}
                   disabled={!isEditMode}
                   readOnly={!isEditMode}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                 />
               </div>
               <div>
@@ -957,7 +977,7 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                   required={isEditMode}
                   disabled={!isEditMode}
                   readOnly={!isEditMode}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                 />
               </div>
               <div>
@@ -972,7 +992,7 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                   max={new Date().toISOString().split("T")[0]}
                   disabled={!isEditMode}
                   readOnly={!isEditMode}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed text-left"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed text-left"
                 />
               </div>
               <div>
@@ -987,7 +1007,10 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                         type="button"
                         onClick={handleEANLookup}
                         disabled={loadingEAN || !formData.ean || formData.ean.trim().length < 8}
-                        className="text-xs px-3 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white rounded transition-colors flex items-center gap-1"
+                        className="text-xs px-3 py-1 disabled:cursor-not-allowed text-white rounded transition-colors flex items-center gap-1"
+                        style={{ backgroundColor: '#534AD3' }}
+                        onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#4338A8')}
+                        onMouseLeave={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#534AD3')}
                       >
                         <svg
                           className="w-3 h-3"
@@ -1042,10 +1065,10 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                   placeholder="EAN-13 or UPC (then click Infos)"
                   disabled={loadingEAN || readOnly}
                   readOnly={readOnly}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                 />
                 {loadingEAN && (
-                  <div className="mt-2 flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
+                  <div className="mt-2 flex items-center gap-2 text-sm" style={{ color: 'rgb(83 74 211)' }}>
                     <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -1065,7 +1088,7 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                   onChange={handleChange}
                   disabled={!isEditMode}
                   readOnly={!isEditMode}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                 />
               </div>
               <div>
@@ -1079,7 +1102,7 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                   onChange={handleChange}
                   disabled={!isEditMode}
                   readOnly={!isEditMode}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                 />
               </div>
               {session?.user?.id && isOwner && (
@@ -1089,27 +1112,42 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                       Condition
                     </label>
                     {isEditMode ? (
-                      <select
-                        name="condition"
-                        value={formData.condition}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">Select condition</option>
-                        <option value="Mint">Mint</option>
-                        <option value="Near Mint">Near Mint</option>
-                        <option value="Very Good">Very Good</option>
-                        <option value="Good">Good</option>
-                        <option value="Fair">Fair</option>
-                        <option value="Poor">Poor</option>
-                      </select>
+                      <div className="relative">
+                        <select
+                          name="condition"
+                          value={formData.condition}
+                          onChange={handleChange}
+                          className="w-full h-[42px] px-4 pr-10 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none appearance-none text-sm"
+                        >
+                          <option value="">Select condition</option>
+                          <option value="Mint">Mint</option>
+                          <option value="Near Mint">Near Mint</option>
+                          <option value="Very Good">Very Good</option>
+                          <option value="Good">Good</option>
+                          <option value="Fair">Fair</option>
+                          <option value="Poor">Poor</option>
+                        </select>
+                        <svg
+                          className="absolute right-3 top-2.5 w-5 h-5 text-slate-400 pointer-events-none"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </div>
                     ) : (
                       <input
                         type="text"
                         value={formData.condition || "Not specified"}
                         disabled
                         readOnly
-                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                       />
                     )}
                   </div>
@@ -1126,7 +1164,7 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                         step="0.01"
                         min="0"
                         placeholder="0.00"
-                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none"
                       />
                     ) : (
                       <input
@@ -1134,7 +1172,7 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                         value={formData.purchasePrice ? `${formData.purchasePrice.toFixed(2)} €` : "Not specified"}
                         disabled
                         readOnly
-                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                       />
                     )}
                   </div>
@@ -1155,7 +1193,7 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                           }));
                         }}
                         max={new Date().toISOString().split("T")[0]}
-                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none"
                       />
                     ) : (
                       <input
@@ -1167,7 +1205,7 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                         }) : "Not specified"}
                         disabled
                         readOnly
-                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                       />
                     )}
                   </div>
@@ -1185,7 +1223,7 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                   value={formData.albumArt}
                   onChange={handleChange}
                   placeholder="https://example.com/album-cover.jpg"
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none"
                 />
               </div>
             )}
@@ -1330,7 +1368,7 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                           value={formData.spotifyLink}
                           onChange={handleChange}
                           placeholder="https://open.spotify.com/album/..."
-                          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none"
                         />
                       </>
                     )}
@@ -1361,7 +1399,7 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                 rows={4}
                 disabled={!isEditMode}
                 readOnly={!isEditMode}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                 placeholder="Add artist bio or fetch from Wikipedia..."
               />
             </div>
@@ -1388,7 +1426,7 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                 rows={4}
                 disabled={!isEditMode}
                 readOnly={!isEditMode}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                 placeholder="Add notes or fetch from Wikipedia..."
               />
             </div>
@@ -1406,7 +1444,7 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                         value={formData.country}
                         onChange={handleChange}
                         placeholder="e.g., US, UK, France"
-                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none"
                       />
                     ) : (
                       <input
@@ -1414,7 +1452,7 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                         value={formData.country || "Not specified"}
                         disabled
                         readOnly
-                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                       />
                     )}
                   </div>
@@ -1423,23 +1461,38 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                       Pressing Type
                     </label>
                     {isEditMode ? (
-                      <select
-                        name="pressingType"
-                        value={formData.pressingType || ""}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">Select pressing type</option>
-                        <option value="original">Original Pressing</option>
-                        <option value="reissue">Reissue</option>
-                      </select>
+                      <div className="relative">
+                        <select
+                          name="pressingType"
+                          value={formData.pressingType || ""}
+                          onChange={handleChange}
+                          className="w-full h-[42px] px-4 pr-10 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none appearance-none text-sm"
+                        >
+                          <option value="">Select pressing type</option>
+                          <option value="original">Original Pressing</option>
+                          <option value="reissue">Reissue</option>
+                        </select>
+                        <svg
+                          className="absolute right-3 top-2.5 w-5 h-5 text-slate-400 pointer-events-none"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </div>
                     ) : (
                       <input
                         type="text"
                         value={formData.pressingType === "original" ? "Original Pressing" : formData.pressingType === "reissue" ? "Reissue" : "Not specified"}
                         disabled
                         readOnly
-                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                       />
                     )}
                   </div>
@@ -1467,7 +1520,7 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                     rows={4}
                     disabled={!isEditMode}
                     readOnly={!isEditMode}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed whitespace-pre-wrap"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed whitespace-pre-wrap"
                     placeholder="Add album credits or fetch from Wikipedia..."
                   />
                 </div>
@@ -1507,7 +1560,9 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                               </div>
                             )}
                           </div>
-                          <p className="text-xs text-slate-700 dark:text-slate-300 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                          <p className="text-xs text-slate-700 dark:text-slate-300 line-clamp-2 transition-colors" style={{ '--hover-color': 'rgb(83 74 211)' } as React.CSSProperties}
+                            onMouseEnter={(e) => e.currentTarget.style.color = 'rgb(83 74 211)'}
+                            onMouseLeave={(e) => e.currentTarget.style.color = ''}>
                             {album.album}
                           </p>
                         </a>
@@ -1527,7 +1582,10 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                     <button
                       type="button"
                       onClick={handleAddTrack}
-                      className="text-xs px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+                      className="text-xs px-3 py-1 text-white rounded transition-colors"
+                      style={{ backgroundColor: '#534AD3' }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4338A8'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#534AD3'}
                     >
                       + Add Track
                     </button>
@@ -1569,21 +1627,21 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                                 value={track.title}
                                 onChange={(e) => handleTrackListChange(index, 'title', e.target.value)}
                                 placeholder="Track title"
-                                className="flex-1 px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="flex-1 px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none"
                               />
                               <input
                                 type="text"
                                 value={track.duration || ""}
                                 onChange={(e) => handleTrackListChange(index, 'duration', e.target.value)}
                                 placeholder="3:45"
-                                className="w-20 px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-20 px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none"
                               />
                               <input
                                 type="url"
                                 value={track.spotifyLink || ""}
                                 onChange={(e) => handleTrackListChange(index, 'spotifyLink', e.target.value)}
                                 placeholder="Spotify link"
-                                className="w-48 px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-48 px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none"
                               />
                               <button
                                 type="button"
@@ -1638,7 +1696,10 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                   <button
                     type="submit"
                     disabled={loading}
-                    className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg font-medium transition-colors"
+                    className="flex-1 px-4 py-2 text-white rounded-lg font-medium transition-colors"
+                    style={{ backgroundColor: '#534AD3' }}
+                    onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#4338A8')}
+                    onMouseLeave={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#534AD3')}
                   >
                     {loading ? "Saving..." : vinyl ? "Update" : "Add Vinyl"}
                   </button>
@@ -1676,7 +1737,10 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                           <button
                             type="button"
                             onClick={() => setIsEditing(true)}
-                            className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                            className="flex-1 px-4 py-2 text-white rounded-lg font-medium transition-colors"
+                            style={{ backgroundColor: 'rgb(83 74 211)' }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4338A8'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgb(83 74 211)'}
                           >
                             Edit
                           </button>
@@ -1699,7 +1763,7 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
-                              style={{ color: 'rgb(37 99 235)' }}
+                              style={{ color: 'rgb(255 0 150)' }}
                             >
                               <path
                                 strokeLinecap="round"
@@ -1711,7 +1775,7 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                           </button>
                         </>
                       )}
-                      {/* Utilisateur connecté MAIS NON propriétaire : Close + Share + Bookmark */}
+                      {/* Utilisateur connecté MAIS NON propriétaire : Close + Bookmark + Share */}
                       {session?.user?.id && !isOwner && vinyl?.id && (
                         <div className="flex-1 flex items-center gap-2">
                           <button
@@ -1723,35 +1787,24 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                           </button>
                           <button
                             type="button"
-                            onClick={handleShare}
-                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
-                            title="Share this vinyl"
-                            aria-label="Share this vinyl"
-                          >
-                            <svg
-                              className="w-6 h-6"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                              style={{ color: 'rgb(37 99 235)' }}
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                              />
-                            </svg>
-                          </button>
-                          <button
-                            type="button"
                             onClick={handleBookmarkClick}
                             disabled={isToggling}
                             className={`p-2 rounded transition-colors ${
                               isBookmarked
-                                ? "bg-yellow-500 hover:bg-yellow-600 text-white"
+                                ? "text-white"
                                 : "bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300"
                             } disabled:opacity-50 disabled:cursor-not-allowed`}
+                            style={isBookmarked ? { backgroundColor: 'rgb(255 0 150)' } : undefined}
+                            onMouseEnter={(e) => {
+                              if (isBookmarked && !e.currentTarget.disabled) {
+                                e.currentTarget.style.backgroundColor = 'rgb(200 0 120)';
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (isBookmarked && !e.currentTarget.disabled) {
+                                e.currentTarget.style.backgroundColor = 'rgb(255 0 150)';
+                              }
+                            }}
                             title={isBookmarked ? "Remove from bookmarks" : "Add to bookmarks"}
                           >
                             <svg
@@ -1765,6 +1818,28 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                                 strokeLinejoin="round"
                                 strokeWidth={2}
                                 d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                              />
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleShare}
+                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                            title="Share this vinyl"
+                            aria-label="Share this vinyl"
+                          >
+                            <svg
+                              className="w-6 h-6"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                              style={{ color: 'rgb(255 0 150)' }}
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
                               />
                             </svg>
                           </button>
@@ -1786,9 +1861,20 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                             disabled={isToggling}
                             className={`p-2 rounded transition-colors ${
                               isBookmarked
-                                ? "bg-yellow-500 hover:bg-yellow-600 text-white"
+                                ? "text-white"
                                 : "bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300"
                             } disabled:opacity-50 disabled:cursor-not-allowed`}
+                            style={isBookmarked ? { backgroundColor: 'rgb(255 0 150)' } : undefined}
+                            onMouseEnter={(e) => {
+                              if (isBookmarked && !e.currentTarget.disabled) {
+                                e.currentTarget.style.backgroundColor = 'rgb(200 0 120)';
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (isBookmarked && !e.currentTarget.disabled) {
+                                e.currentTarget.style.backgroundColor = 'rgb(255 0 150)';
+                              }
+                            }}
                             title={isBookmarked ? "Remove from bookmarks" : "Add to bookmarks"}
                           >
                             <svg
@@ -1812,6 +1898,12 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                 </>
               )}
             </div>
+            {/* Show reCAPTCHA notice only when adding new vinyl (not editing) */}
+            {isEditMode && !vinyl && (
+              <p className="mt-4 text-center text-xs text-slate-500 dark:text-slate-400">
+                Ce site est protégé par reCAPTCHA
+              </p>
+            )}
           </form>
         </div>
       </div>

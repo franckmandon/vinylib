@@ -158,7 +158,7 @@ export default function MyVinylsPage() {
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
-                      style={{ color: 'rgb(37 99 235)' }}
+                      style={{ color: 'rgb(255 0 150)' }}
                     >
                       <path
                         strokeLinecap="round"
@@ -180,7 +180,7 @@ export default function MyVinylsPage() {
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
-                      style={{ color: 'rgb(37 99 235)' }}
+                      style={{ color: 'rgb(255 0 150)' }}
                     >
                       <path
                         strokeLinecap="round"

@@ -312,7 +312,10 @@ export default function BookmarksPage() {
                       </button>
                       <button
                         onClick={() => handleAddToCollection(bookmark.vinyl)}
-                        className="flex-1 px-2 py-2 sm:px-3 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm rounded transition-colors"
+                        className="flex-1 px-2 py-2 sm:px-3 sm:py-2 text-white text-xs sm:text-sm rounded transition-colors"
+                        style={{ backgroundColor: '#534AD3' }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4338A8'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#534AD3'}
                       >
                         Add vinyl
                       </button>

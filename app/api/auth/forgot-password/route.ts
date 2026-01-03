@@ -6,13 +6,42 @@ export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
   try {
-    const { email } = await request.json();
+    const { email, recaptchaToken } = await request.json();
     
     if (!email) {
       return NextResponse.json(
         { error: "Email is required" },
         { status: 400 }
       );
+    }
+
+    // Verify reCAPTCHA if token is provided
+    if (recaptchaToken) {
+      try {
+        const verifyResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/recaptcha/verify`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ token: recaptchaToken }),
+        });
+
+        if (!verifyResponse.ok) {
+          const verifyData = await verifyResponse.json();
+          console.error("[forgot-password] reCAPTCHA verification failed:", verifyData);
+          return NextResponse.json(
+            { error: "reCAPTCHA verification failed. Please try again." },
+            { status: 400 }
+          );
+        }
+        console.log("[forgot-password] reCAPTCHA verified successfully");
+      } catch (error) {
+        console.error("[forgot-password] Error verifying reCAPTCHA:", error);
+        return NextResponse.json(
+          { error: "reCAPTCHA verification failed. Please try again." },
+          { status: 400 }
+        );
+      }
     }
     
     console.log("[forgot-password] Processing request for email:", email);

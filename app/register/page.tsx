@@ -3,9 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useReCaptcha } from "@/hooks/useReCaptcha";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "";
+  const { executeRecaptcha } = useReCaptcha(siteKey);
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -38,12 +41,26 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
+      // Execute reCAPTCHA
+      let recaptchaToken: string | null = null;
+      if (siteKey) {
+        try {
+          recaptchaToken = await executeRecaptcha("register");
+          console.log("[register] reCAPTCHA token obtained");
+        } catch (recaptchaError) {
+          console.error("[register] reCAPTCHA error:", recaptchaError);
+          setError("reCAPTCHA verification failed. Please try again.");
+          setLoading(false);
+          return;
+        }
+      }
+
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, username, password }),
+        body: JSON.stringify({ email, username, password, recaptchaToken: recaptchaToken || undefined }),
       });
 
       const data = await response.json();
@@ -92,7 +109,13 @@ export default function RegisterPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none"
+              onFocus={(e) => {
+                e.currentTarget.style.boxShadow = '0 0 0 2px rgb(83 74 211)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.boxShadow = '';
+              }}
               placeholder="your.email@example.com"
             />
           </div>
@@ -107,7 +130,13 @@ export default function RegisterPage() {
               onChange={(e) => setUsername(e.target.value)}
               required
               minLength={3}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none"
+              onFocus={(e) => {
+                e.currentTarget.style.boxShadow = '0 0 0 2px rgb(83 74 211)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.boxShadow = '';
+              }}
               placeholder="Choose a username"
             />
           </div>
@@ -123,7 +152,7 @@ export default function RegisterPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                className="w-full px-3 py-2 pr-10 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 pr-10 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none"
                 placeholder="At least 6 characters"
               />
               <button
@@ -156,7 +185,7 @@ export default function RegisterPage() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 minLength={6}
-                className="w-full px-3 py-2 pr-10 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 pr-10 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none"
                 placeholder="Confirm your password"
               />
               <button
@@ -187,17 +216,25 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg font-medium transition-colors"
+            className="w-full px-4 py-2 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
+            style={{ backgroundColor: '#534AD3' }}
+            onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#4338A8')}
+            onMouseLeave={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#534AD3')}
           >
             {loading ? "Creating account..." : "Create Account"}
           </button>
         </form>
 
+        <p className="mt-4 text-center text-xs text-slate-500 dark:text-slate-400">
+          Ce site est protégé par reCAPTCHA
+        </p>
+
         <p className="mt-6 text-center text-sm text-slate-600 dark:text-slate-400">
           Already have an account?{" "}
           <Link
             href="/login"
-            className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+            className="hover:text-blue-700 dark:hover:text-blue-300 font-medium"
+            style={{ color: 'rgb(83 74 211)' }}
           >
             Sign in
           </Link>

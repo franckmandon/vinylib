@@ -61,13 +61,16 @@ function HomeContent() {
             <div className="flex items-center justify-end gap-2 mb-4 md:hidden">
               <Link
                 href="/login"
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+                className="px-4 py-2 text-white rounded-lg text-sm font-medium transition-colors"
+                style={{ backgroundColor: '#534AD3' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4338A8'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#534AD3'}
               >
                 Sign In
               </Link>
               <Link
                 href="/register"
-                className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 rounded-lg text-sm font-medium transition-colors"
+                className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 rounded-lg text-sm font-bold transition-colors"
               >
                 Create an account
               </Link>
@@ -102,13 +105,16 @@ function HomeContent() {
               <div className="hidden md:flex gap-2">
                 <Link
                   href="/login"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+                  className="px-4 py-2 text-white rounded-lg text-sm font-medium transition-colors"
+                style={{ backgroundColor: '#534AD3' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4338A8'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#534AD3'}
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/register"
-                  className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 rounded-lg text-sm font-medium transition-colors"
+                  className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 rounded-lg text-sm font-bold transition-colors"
                 >
                   Create an account
                 </Link>
@@ -129,7 +135,7 @@ function HomeContent() {
                   The day you found it, the first time it moved you, the memories pressed into its grooves.
                 </p>
                 <p className="text-slate-600 dark:text-slate-400 text-lg leading-relaxed">
-                  Vinyl Report helps you honor that connection by turning your collection into a living archive where every album has a voice, every artist has a history, and every shelf holds rediscovery. One scan at a time, build the collection you&apos;ve always imagined, organized, celebrated, and ready to surprise you all over again.
+                  Vinyl Report helps you honor that connection by turning your collection into a living archive where every album has a voice, every artist has a history, and every shelf holds rediscovery.
                 </p>
               </div>
               <div className="bg-white dark:bg-slate-800 rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow">
@@ -174,6 +180,19 @@ function HomeContent() {
                   Track your collection&apos;s evolution with <span style={{ backgroundColor: '#534AD3', color: 'white', padding: '2px 4px' }}>rich statistics</span> and filtering options that reveal your collecting patterns. Browse by genre or decade, filter by rating, monitor total value through purchase prices, and use condition tracking to identify records needing care. <span style={{ backgroundColor: '#534AD3', color: 'white', padding: '2px 4px' }}>Your collection transforms from a static inventory into a dynamic dashboard</span>.
                 </p>
               </div>
+            </div>
+          </section>
+        )}
+
+        {/* Quote Section */}
+        {!session?.user && (
+          <section className="mb-16">
+            <div className="max-w-4xl mx-auto">
+              <p className="text-center text-slate-900 dark:text-slate-100" style={{ fontSize: '3rem', lineHeight: '1.4' }}>
+                <span style={{ backgroundColor: '#534AD3', color: 'white', padding: '4px 8px' }}>
+                  One scan at a time, build the collection you&apos;ve always imagined, organized, celebrated, and ready to surprise you all over again.
+                </span>
+              </p>
             </div>
           </section>
         )}
@@ -225,7 +244,10 @@ function HomeContent() {
               <div className="text-center">
                 <Link
                   href="/faq"
-                  className="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-md hover:shadow-lg"
+                  className="inline-block px-6 py-3 text-white rounded-lg font-medium transition-colors shadow-md hover:shadow-lg"
+                  style={{ backgroundColor: '#534AD3' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4338A8'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#534AD3'}
                 >
                   View all FAQs
                 </Link>

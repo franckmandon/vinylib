@@ -38,7 +38,7 @@ export default function SearchBar({
           placeholder="Search by artist, album, genre, or label..."
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full h-[42px] px-4 pl-10 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full h-[42px] px-4 pl-10 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none"
         />
         <svg
           className="absolute left-3 top-2.5 w-5 h-5 text-slate-400"
@@ -58,11 +58,12 @@ export default function SearchBar({
       <div className="flex flex-row gap-3 w-full md:w-auto md:flex-shrink-0">
         <div className="relative flex-1 md:flex-initial md:min-w-[180px]">
           <select
+            name="sort by"
             value={sortBy}
             onChange={(e) =>
               onSortChange(e.target.value as "artist" | "album" | "releaseDate" | "rating" | "dateAdded" | "ownerCount")
             }
-            className="w-full h-[42px] px-4 pr-10 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none text-sm"
+            className="w-full h-[42px] px-4 pr-10 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none appearance-none text-sm"
           >
             <option value="dateAdded">Sort by Date Added</option>
             <option value="artist">Sort by Artist</option>
@@ -87,9 +88,10 @@ export default function SearchBar({
         </div>
         <div className="relative flex-1 md:flex-initial md:min-w-[140px]">
           <select
+            name="genres"
             value={selectedGenre}
             onChange={(e) => onGenreChange(e.target.value)}
-            className="w-full h-[42px] px-4 pr-10 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none text-sm"
+            className="w-full h-[42px] px-4 pr-10 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none appearance-none text-sm"
           >
             <option value="">All Genres</option>
             {availableGenres.map((genre) => (
@@ -119,7 +121,7 @@ export default function SearchBar({
               onClick={() => onViewModeChange("grid")}
               className={`h-full px-2 rounded transition-colors ${
                 viewMode === "grid"
-                  ? "bg-slate-100 dark:bg-slate-700 text-blue-600 dark:text-blue-400"
+                  ? "bg-slate-100 dark:bg-slate-700"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
               }`}
               aria-label="Grid view"
@@ -132,7 +134,7 @@ export default function SearchBar({
               onClick={() => onViewModeChange("list")}
               className={`h-full px-2 rounded transition-colors ${
                 viewMode === "list"
-                  ? "bg-slate-100 dark:bg-slate-700 text-blue-600 dark:text-blue-400"
+                  ? "bg-slate-100 dark:bg-slate-700"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
               }`}
               aria-label="List view"
@@ -148,7 +150,10 @@ export default function SearchBar({
       {showAddButton && onAddClick && (
         <button
           onClick={onAddClick}
-          className="hidden md:block px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-md hover:shadow-lg whitespace-nowrap"
+          className="hidden md:block px-6 py-2 text-white rounded-lg font-medium transition-colors shadow-md hover:shadow-lg whitespace-nowrap"
+          style={{ backgroundColor: '#534AD3' }}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4338A8'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#534AD3'}
         >
           <strong>+ Add Vinyl</strong>
         </button>
@@ -157,7 +162,10 @@ export default function SearchBar({
       {showAddButton && onAddClick && (
         <button
           onClick={onAddClick}
-          className="w-full md:hidden px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-md hover:shadow-lg"
+          className="w-full md:hidden px-6 py-2 text-white rounded-lg font-medium transition-colors shadow-md hover:shadow-lg"
+          style={{ backgroundColor: '#534AD3' }}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4338A8'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#534AD3'}
         >
           <strong>+ Add Vinyl</strong>
         </button>

@@ -68,7 +68,15 @@ export default function UserMenu() {
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
+        className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100 transition-colors cursor-pointer"
+        onMouseEnter={(e) => {
+          const target = e.currentTarget;
+          target.style.color = 'rgb(83 74 211)';
+        }}
+        onMouseLeave={(e) => {
+          const target = e.currentTarget;
+          target.style.color = '';
+        }}
       >
         <span>{session.user.username}</span>
         <svg

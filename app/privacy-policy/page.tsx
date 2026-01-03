@@ -34,13 +34,16 @@ export default function PrivacyPolicyPage() {
             <div className="flex items-center justify-end gap-2 mb-4 md:hidden">
               <Link
                 href="/login"
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+                className="px-4 py-2 text-white rounded-lg text-sm font-medium transition-colors"
+                style={{ backgroundColor: '#534AD3' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4338A8'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#534AD3'}
               >
                 Sign In
               </Link>
               <Link
                 href="/register"
-                className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 rounded-lg text-sm font-medium transition-colors"
+                className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 rounded-lg text-sm font-bold transition-colors"
               >
                 Create an account
               </Link>
@@ -71,13 +74,16 @@ export default function PrivacyPolicyPage() {
             <div className="hidden md:flex items-center justify-end gap-2 mb-4">
               <Link
                 href="/login"
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+                className="px-4 py-2 text-white rounded-lg text-sm font-medium transition-colors"
+                style={{ backgroundColor: '#534AD3' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4338A8'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#534AD3'}
               >
                 Sign In
               </Link>
               <Link
                 href="/register"
-                className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 rounded-lg text-sm font-medium transition-colors"
+                className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 rounded-lg text-sm font-bold transition-colors"
               >
                 Create an account
               </Link>
@@ -205,7 +211,7 @@ export default function PrivacyPolicyPage() {
                 7. Cookies and Tracking
               </h2>
               <p className="text-slate-700 dark:text-slate-300 mb-4">
-                We use cookies and similar technologies to enhance your experience. For more information, please see our <Link href="/cookie-policy" className="text-blue-600 dark:text-blue-400 hover:underline">Cookie Policy</Link>.
+                We use cookies and similar technologies to enhance your experience. For more information, please see our <Link href="/cookie-policy" className="hover:underline" style={{ color: 'rgb(83 74 211)' }}>Cookie Policy</Link>.
               </p>
             </section>
 

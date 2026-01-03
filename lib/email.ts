@@ -58,7 +58,7 @@ export async function sendWelcomeEmail(email: string, username: string) {
               </ul>
               <div style="text-align: center; margin: 30px 0;">
                 <a href="${process.env.NEXTAUTH_URL || "https://vinyl.report"}" 
-                   style="background: rgb(37, 99, 235); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+                   style="background: #534AD3; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
                   Start Your Collection
                 </a>
               </div>
@@ -134,13 +134,13 @@ export async function sendPasswordResetEmail(email: string, username: string, re
               </p>
               <div style="text-align: center; margin: 30px 0;">
                 <a href="${resetUrl}" 
-                   style="background: rgb(37, 99, 235); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+                   style="background: #534AD3; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
                   Reset my password
                 </a>
               </div>
               <p style="font-size: 14px; color: #666; margin-bottom: 20px;">
                 Or copy and paste this link into your browser:<br>
-                <a href="${resetUrl}" style="color: rgb(37, 99, 235); word-break: break-all;">${resetUrl}</a>
+                <a href="${resetUrl}" style="color: #534AD3; word-break: break-all;">${resetUrl}</a>
               </p>
               <p style="font-size: 14px; color: #666; margin-top: 30px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
                 This link is valid for 1 hour.<br>
@@ -253,7 +253,7 @@ export async function sendContactEmail(
                 ${companyName ? `<p style="font-size: 16px; margin-bottom: 8px;"><strong>Company:</strong> ${companyName}</p>` : ''}
                 ${country ? `<p style="font-size: 16px; margin-bottom: 8px;"><strong>Country:</strong> ${country}</p>` : ''}
               </div>
-              <div style="margin-top: 20px; padding: 20px; background: white; border-left: 4px solid rgb(37, 99, 235); border-radius: 5px;">
+              <div style="margin-top: 20px; padding: 20px; background: white; border-left: 4px solid #534AD3; border-radius: 5px;">
                 <p style="font-size: 16px; font-weight: bold; margin-bottom: 10px;">Message:</p>
                 <p style="font-size: 16px; margin: 0; white-space: pre-wrap;">${message.replace(/\n/g, '<br>')}</p>
               </div>

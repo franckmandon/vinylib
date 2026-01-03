@@ -136,7 +136,7 @@ export default function DashboardPage() {
       <main className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
         <div className="container mx-auto px-4 py-8">
           <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: 'rgb(83 74 211)' }}></div>
             <p className="mt-4 text-slate-600 dark:text-slate-400">Loading your dashboard...</p>
           </div>
         </div>
@@ -204,7 +204,10 @@ export default function DashboardPage() {
             <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
             <button
               onClick={fetchStats}
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+              className="px-6 py-3 text-white rounded-lg font-medium transition-colors"
+              style={{ backgroundColor: '#534AD3' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4338A8'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#534AD3'}
             >
               Retry
             </button>
@@ -815,7 +818,10 @@ export default function DashboardPage() {
                         </div>
                         <button
                           onClick={() => handleViewVinyl(item.id)}
-                          className="ml-4 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
+                          className="ml-4 px-3 py-1 text-white text-xs rounded transition-colors"
+                          style={{ backgroundColor: '#534AD3' }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4338A8'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#534AD3'}
                         >
                           Edit
                         </button>

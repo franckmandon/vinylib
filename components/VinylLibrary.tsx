@@ -299,7 +299,8 @@ export default function VinylLibrary({ mode = "public", hideSearch = false, limi
               setFilterByOwner(null);
               router.push("/");
             }}
-            className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+            className="text-sm hover:underline"
+            style={{ color: 'rgb(83 74 211)' }}
           >
             Clear filter
           </button>
@@ -470,9 +471,10 @@ export default function VinylLibrary({ mode = "public", hideSearch = false, limi
                         onClick={() => setCurrentPage(page)}
                         className={`px-3 py-2 rounded-lg transition-colors ${
                           currentPage === page
-                            ? "bg-blue-600 text-white"
+                            ? "text-white"
                             : "bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600"
                         }`}
+                        style={currentPage === page ? { backgroundColor: 'rgb(83 74 211)' } : undefined}
                       >
                         {page}
                       </button>

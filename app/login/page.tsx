@@ -4,11 +4,14 @@ import { useState, useEffect, Suspense } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useReCaptcha } from "@/hooks/useReCaptcha";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
+  const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "";
+  const { executeRecaptcha } = useReCaptcha(siteKey);
   const [emailOrUsername, setEmailOrUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -52,6 +55,41 @@ function LoginForm() {
     setLoading(true);
 
     try {
+      // Execute reCAPTCHA
+      let recaptchaToken: string | null = null;
+      if (siteKey) {
+        try {
+          recaptchaToken = await executeRecaptcha("login");
+          console.log("[login] reCAPTCHA token obtained");
+        } catch (recaptchaError) {
+          console.error("[login] reCAPTCHA error:", recaptchaError);
+          setError("reCAPTCHA verification failed. Please try again.");
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Verify reCAPTCHA and credentials via custom API
+      const verifyResponse = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          emailOrUsername,
+          password,
+          recaptchaToken: recaptchaToken || undefined,
+        }),
+      });
+
+      if (!verifyResponse.ok) {
+        const verifyData = await verifyResponse.json();
+        setError(verifyData.error || "Invalid email/username or password");
+        setLoading(false);
+        return;
+      }
+
+      // If verification succeeds, proceed with NextAuth signIn
       const result = await signIn("credentials", {
         emailOrUsername,
         password,
@@ -118,7 +156,7 @@ function LoginForm() {
               value={emailOrUsername}
               onChange={(e) => setEmailOrUsername(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none"
               placeholder="Enter your email or username"
             />
           </div>
@@ -133,7 +171,7 @@ function LoginForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-3 py-2 pr-10 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 pr-10 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none"
                 placeholder="Enter your password"
               />
               <button
@@ -164,16 +202,24 @@ function LoginForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg font-medium transition-colors"
+            className="w-full px-4 py-2 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
+            style={{ backgroundColor: '#534AD3' }}
+            onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#4338A8')}
+            onMouseLeave={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#534AD3')}
           >
             {loading ? "Signing in..." : "Sign In"}
           </button>
         </form>
 
+        <p className="mt-4 text-center text-xs text-slate-500 dark:text-slate-400">
+          Ce site est protégé par reCAPTCHA
+        </p>
+
         <div className="mt-4 text-center">
           <Link
             href="/forgot-password"
-            className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+            className="text-sm hover:text-blue-700 dark:hover:text-blue-300 font-medium"
+            style={{ color: 'rgb(83 74 211)' }}
           >
             Forgot your password?
           </Link>
@@ -183,7 +229,8 @@ function LoginForm() {
           Don&apos;t have an account?{" "}
           <Link
             href="/register"
-            className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+            className="hover:text-blue-700 dark:hover:text-blue-300 font-medium"
+            style={{ color: 'rgb(83 74 211)' }}
           >
             Sign up
           </Link>

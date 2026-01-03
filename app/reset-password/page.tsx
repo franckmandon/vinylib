@@ -87,7 +87,10 @@ function ResetPasswordForm() {
           </p>
           <Link
             href="/forgot-password"
-            className="block w-full text-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+            className="block w-full text-center px-4 py-2 text-white rounded-lg font-medium transition-colors"
+            style={{ backgroundColor: '#534AD3' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4338A8'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#534AD3'}
           >
             Demander un nouveau lien
           </Link>
@@ -131,7 +134,13 @@ function ResetPasswordForm() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                className="w-full px-3 py-2 pr-10 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 pr-10 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none"
+                onFocus={(e) => {
+                  e.currentTarget.style.boxShadow = '0 0 0 2px rgb(83 74 211)';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.boxShadow = '';
+                }}
                 placeholder="Au moins 6 caractères"
               />
               <button
@@ -164,7 +173,13 @@ function ResetPasswordForm() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 minLength={6}
-                className="w-full px-3 py-2 pr-10 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 pr-10 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none"
+                onFocus={(e) => {
+                  e.currentTarget.style.boxShadow = '0 0 0 2px rgb(83 74 211)';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.boxShadow = '';
+                }}
                 placeholder="Confirmer le mot de passe"
               />
               <button
@@ -195,7 +210,10 @@ function ResetPasswordForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg font-medium transition-colors"
+            className="w-full px-4 py-2 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
+            style={{ backgroundColor: '#534AD3' }}
+            onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#4338A8')}
+            onMouseLeave={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#534AD3')}
           >
             {loading ? "Réinitialisation..." : "Réinitialiser le mot de passe"}
           </button>

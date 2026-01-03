@@ -3,9 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useReCaptcha } from "@/hooks/useReCaptcha";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
+  const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "";
+  const { executeRecaptcha } = useReCaptcha(siteKey);
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -18,12 +21,26 @@ export default function ForgotPasswordPage() {
     setLoading(true);
 
     try {
+      // Execute reCAPTCHA
+      let recaptchaToken: string | null = null;
+      if (siteKey) {
+        try {
+          recaptchaToken = await executeRecaptcha("forgot_password");
+          console.log("[forgot-password] reCAPTCHA token obtained");
+        } catch (recaptchaError) {
+          console.error("[forgot-password] reCAPTCHA error:", recaptchaError);
+          setError("reCAPTCHA verification failed. Please try again.");
+          setLoading(false);
+          return;
+        }
+      }
+
       const response = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, recaptchaToken: recaptchaToken || undefined }),
       });
 
       const data = await response.json();
@@ -72,7 +89,10 @@ export default function ForgotPasswordPage() {
             </div>
             <Link
               href="/login"
-              className="block w-full text-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+              className="block w-full text-center px-4 py-2 text-white rounded-lg font-medium transition-colors"
+              style={{ backgroundColor: '#534AD3' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4338A8'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#534AD3'}
             >
               Back to login
             </Link>
@@ -88,7 +108,13 @@ export default function ForgotPasswordPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none"
+                onFocus={(e) => {
+                  e.currentTarget.style.boxShadow = '0 0 0 2px rgb(83 74 211)';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.boxShadow = '';
+                }}
                 placeholder="your.email@example.com"
               />
             </div>
@@ -102,17 +128,25 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg font-medium transition-colors"
+              className="w-full px-4 py-2 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
+              style={{ backgroundColor: '#534AD3' }}
+              onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#4338A8')}
+              onMouseLeave={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#534AD3')}
             >
               {loading ? "Sending..." : "Send reset link"}
             </button>
+
+            <p className="mt-4 text-center text-xs text-slate-500 dark:text-slate-400">
+              Ce site est protégé par reCAPTCHA
+            </p>
           </form>
         )}
 
         <div className="mt-6 text-center">
           <Link
             href="/login"
-            className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+            className="text-sm hover:text-blue-700 dark:hover:text-blue-300 font-medium"
+            style={{ color: 'rgb(83 74 211)' }}
           >
             ← Back to login
           </Link>

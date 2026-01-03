@@ -6,7 +6,47 @@ export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, username, password } = await request.json();
+    const { email, username, password, recaptchaToken } = await request.json();
+    
+    // Verify reCAPTCHA if token is provided
+    if (recaptchaToken) {
+      try {
+        const verifyResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/recaptcha/verify`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ token: recaptchaToken }),
+        });
+
+        if (!verifyResponse.ok) {
+          const verifyData = await verifyResponse.json();
+          console.error("[register] reCAPTCHA verification failed:", verifyData);
+          return NextResponse.json(
+            { error: "reCAPTCHA verification failed. Please try again." },
+            { status: 400 }
+          );
+        }
+
+        const verifyData = await verifyResponse.json();
+        console.log("[register] reCAPTCHA verified successfully. Score:", verifyData.score);
+      } catch (recaptchaError: any) {
+        console.error("[register] Error verifying reCAPTCHA:", recaptchaError);
+        // In development, allow requests even if reCAPTCHA verification fails
+        if (process.env.NODE_ENV === "production") {
+          return NextResponse.json(
+            { error: "reCAPTCHA verification failed. Please try again." },
+            { status: 400 }
+          );
+        }
+      }
+    } else if (process.env.NODE_ENV === "production") {
+      // Require reCAPTCHA token in production
+      return NextResponse.json(
+        { error: "reCAPTCHA verification is required" },
+        { status: 400 }
+      );
+    }
     
     if (!email || !username || !password) {
       return NextResponse.json(

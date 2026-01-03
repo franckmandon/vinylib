@@ -13,7 +13,7 @@ export default function Footer() {
     <footer className="bg-slate-200 dark:bg-slate-900 border-t border-slate-300 dark:border-slate-700 mt-auto">
       {/* CTA Section */}
       {!hideCTASection && (
-        <div className="border-b border-slate-300 dark:border-slate-700" style={{ backgroundColor: 'rgb(30 80 200)' }}>
+        <div className="border-b border-slate-300 dark:border-slate-700" style={{ backgroundColor: '#534AD3' }}>
         <div className="container mx-auto px-4 py-12">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-3xl font-bold text-white mb-4">
@@ -24,7 +24,14 @@ export default function Footer() {
             </p>
             <Link
               href="/register"
-              className="inline-block px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-md hover:shadow-lg"
+              className="inline-block px-8 py-3 rounded-lg font-bold transition-colors shadow-md hover:shadow-lg"
+              style={{ backgroundColor: 'white', color: 'rgb(83 74 211)' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#f3f4f6';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'white';
+              }}
             >
               Create a free account now
             </Link>
@@ -42,35 +49,35 @@ export default function Footer() {
             <Link
               href="/privacy-policy"
               className="transition-colors"
-              style={{ color: 'rgb(37 99 235)' }}
+              style={{ color: '#534AD3' }}
             >
               Privacy Policy
             </Link>
             <Link
               href="/terms-of-service"
               className="transition-colors"
-              style={{ color: 'rgb(37 99 235)' }}
+              style={{ color: '#534AD3' }}
             >
               Terms of Service
             </Link>
             <Link
               href="/cookie-policy"
               className="transition-colors"
-              style={{ color: 'rgb(37 99 235)' }}
+              style={{ color: '#534AD3' }}
             >
               Cookie Policy
             </Link>
             <Link
               href="/contact"
               className="transition-colors"
-              style={{ color: 'rgb(37 99 235)' }}
+              style={{ color: '#534AD3' }}
             >
               Contact
             </Link>
             <Link
               href="/faq"
               className="transition-colors"
-              style={{ color: 'rgb(37 99 235)' }}
+              style={{ color: '#534AD3' }}
             >
               FAQ
             </Link>
@@ -80,7 +87,7 @@ export default function Footer() {
             <Link
               href="/privacy-policy"
               className="transition-colors"
-              style={{ color: 'rgb(37 99 235)' }}
+              style={{ color: '#534AD3' }}
             >
               Privacy Policy
             </Link>
@@ -88,7 +95,7 @@ export default function Footer() {
             <Link
               href="/terms-of-service"
               className="transition-colors"
-              style={{ color: 'rgb(37 99 235)' }}
+              style={{ color: '#534AD3' }}
             >
               Terms of Service
             </Link>
@@ -96,7 +103,7 @@ export default function Footer() {
             <Link
               href="/cookie-policy"
               className="transition-colors"
-              style={{ color: 'rgb(37 99 235)' }}
+              style={{ color: '#534AD3' }}
             >
               Cookie Policy
             </Link>
@@ -104,7 +111,7 @@ export default function Footer() {
             <Link
               href="/contact"
               className="transition-colors"
-              style={{ color: 'rgb(37 99 235)' }}
+              style={{ color: '#534AD3' }}
             >
               Contact
             </Link>
@@ -112,7 +119,7 @@ export default function Footer() {
             <Link
               href="/faq"
               className="transition-colors"
-              style={{ color: 'rgb(37 99 235)' }}
+              style={{ color: '#534AD3' }}
             >
               FAQ
             </Link>

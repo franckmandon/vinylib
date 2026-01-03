@@ -263,7 +263,9 @@ export default function VinylCard({ vinyl, onEdit, onDelete, isLoggedIn = false,
                     e.stopPropagation();
                     onOwnerClick(vinyl.owners![0].username, vinyl.owners![0].userId);
                   }}
-                  className="font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 underline cursor-pointer"
+                  className="font-semibold text-slate-700 dark:text-slate-300 underline cursor-pointer"
+                  onMouseEnter={(e) => e.currentTarget.style.color = 'rgb(83 74 211)'}
+                  onMouseLeave={(e) => e.currentTarget.style.color = ''}
                 >
                   {vinyl.owners[0].username}
                 </button>
@@ -279,7 +281,9 @@ export default function VinylCard({ vinyl, onEdit, onDelete, isLoggedIn = false,
                         e.stopPropagation();
                         onOwnerClick(o.username, o.userId);
                       }}
-                      className="font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 underline cursor-pointer"
+                      className="font-semibold text-slate-700 dark:text-slate-300 underline cursor-pointer"
+                  onMouseEnter={(e) => e.currentTarget.style.color = 'rgb(83 74 211)'}
+                  onMouseLeave={(e) => e.currentTarget.style.color = ''}
                     >
                       {o.username}
                     </button>
@@ -299,7 +303,9 @@ export default function VinylCard({ vinyl, onEdit, onDelete, isLoggedIn = false,
                   e.stopPropagation();
                   onOwnerClick(vinyl.username!, vinyl.userId);
                 }}
-                className="font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 underline cursor-pointer"
+                className="font-semibold text-slate-700 dark:text-slate-300 underline cursor-pointer"
+                onMouseEnter={(e) => e.currentTarget.style.color = 'rgb(83 74 211)'}
+                onMouseLeave={(e) => e.currentTarget.style.color = ''}
               >
                 {vinyl.username}
               </button>
@@ -345,9 +351,20 @@ export default function VinylCard({ vinyl, onEdit, onDelete, isLoggedIn = false,
                   disabled={isToggling}
                   className={`px-3 py-2 rounded transition-colors ${
                     isBookmarked
-                      ? "bg-yellow-500 hover:bg-yellow-600 text-white"
+                      ? "text-white"
                       : "bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300"
                   } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  style={isBookmarked ? { backgroundColor: 'rgb(255 0 150)' } : undefined}
+                  onMouseEnter={(e) => {
+                    if (isBookmarked && !e.currentTarget.disabled) {
+                      e.currentTarget.style.backgroundColor = 'rgb(200 0 120)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (isBookmarked && !e.currentTarget.disabled) {
+                      e.currentTarget.style.backgroundColor = 'rgb(255 0 150)';
+                    }
+                  }}
                   title={isBookmarked ? "Remove from bookmarks" : "Add to bookmarks"}
                 >
                   <svg

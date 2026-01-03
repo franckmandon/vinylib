@@ -4,6 +4,7 @@ import { SessionProvider } from "@/components/SessionProvider";
 import Footer from "@/components/Footer";
 import BookmarkSync from "@/components/BookmarkSync";
 import ThemeMetaTags from "@/components/ThemeMetaTags";
+import ReCaptchaWrapper from "@/components/ReCaptchaWrapper";
 
 export const metadata: Metadata = {
   title: "Vinyl Report - Your Vinyl Collection Manager",
@@ -20,7 +21,6 @@ export const metadata: Metadata = {
   },
   manifest: "/manifest.json",
   appleWebApp: {
-    capable: true,
     statusBarStyle: "black-translucent",
     title: "Vinyl Report",
   },
@@ -40,13 +40,15 @@ export default function RootLayout({
     <html lang="en">
       <body className="antialiased flex flex-col min-h-screen">
         <ThemeMetaTags />
-        <SessionProvider>
-          <BookmarkSync />
-          <div className="flex-1">
-            {children}
-          </div>
-          <Footer />
-        </SessionProvider>
+        <ReCaptchaWrapper>
+          <SessionProvider>
+            <BookmarkSync />
+            <div className="flex-1">
+              {children}
+            </div>
+            <Footer />
+          </SessionProvider>
+        </ReCaptchaWrapper>
       </body>
     </html>
   );
