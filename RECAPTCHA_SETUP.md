@@ -49,10 +49,14 @@ RECAPTCHA_SECRET_KEY=votre_secret_key_ici
 - `RECAPTCHA_SECRET_KEY` doit être la clé secrète correspondante
 - Assurez-vous de sélectionner **Production**, **Preview**, et **Development** lors de l'ajout des variables
 
-5. Après avoir ajouté les variables, **redéployez votre application** :
+5. Après avoir ajouté les variables, **redéployez votre application SANS CACHE** :
    - Allez dans **Deployments**
-   - Cliquez sur **Redeploy** sur le dernier déploiement
-   - Ou faites un nouveau commit pour déclencher un nouveau déploiement
+   - Cliquez sur les trois points (⋯) du dernier déploiement
+   - Cliquez sur **Redeploy**
+   - **IMPORTANT** : Décochez "Use existing Build Cache" pour forcer un nouveau build avec les variables
+   - Ou faites un nouveau commit pour déclencher un nouveau déploiement automatique
+   
+   **Pourquoi sans cache ?** Les variables `NEXT_PUBLIC_*` sont injectées au moment du build. Si le cache est utilisé, le build précédent (sans la variable) sera réutilisé.
 
 ## 3. Installation
 
@@ -137,25 +141,31 @@ Ces actions apparaissent dans la console Google reCAPTCHA pour l'analyse.
    - Allez dans **Settings** → **Environment Variables**
    - Vérifiez que `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` et `RECAPTCHA_SECRET_KEY` sont présentes
    - **IMPORTANT** : Assurez-vous qu'elles sont activées pour **Production** (pas seulement Development ou Preview)
+   - Vérifiez que les valeurs sont correctes (pas d'espaces, pas de guillemets supplémentaires)
 
 2. **Utilisez les mêmes clés** :
    - La même `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` doit être utilisée en local et en production
    - C'est pour cela que vous avez ajouté à la fois `localhost` et `vinyl.report` dans les domaines autorisés de Google reCAPTCHA
 
-3. **Redéployez après avoir ajouté/modifié les variables** :
-   - Les variables d'environnement ne sont appliquées qu'aux nouveaux déploiements
+3. **Redéployez SANS CACHE après avoir ajouté/modifié les variables** :
+   - Les variables `NEXT_PUBLIC_*` sont injectées au moment du **build**
    - Allez dans **Deployments** sur Vercel
-   - Cliquez sur **Redeploy** sur le dernier déploiement
-   - Ou faites un nouveau commit pour déclencher un nouveau déploiement
+   - Cliquez sur les trois points (⋯) du dernier déploiement
+   - Cliquez sur **Redeploy**
+   - **CRITIQUE** : Décochez "Use existing Build Cache" pour forcer un nouveau build
+   - Si vous ne désactivez pas le cache, le build précédent (sans la variable) sera réutilisé
+   - Ou faites un nouveau commit pour déclencher un nouveau déploiement automatique
 
-4. **Vérifiez les logs Vercel** :
+4. **Vérifiez que la variable est bien dans le build** :
+   - Après le redéploiement, ouvrez `https://vinyl.report/login` dans votre navigateur
+   - Ouvrez la console développeur (F12)
+   - Si vous voyez `[login] reCAPTCHA site key is set: ...`, la variable est accessible ✅
+   - Si vous voyez `[login] NEXT_PUBLIC_RECAPTCHA_SITE_KEY is not set!`, le build n'a pas pris la variable ❌
+
+5. **Vérifiez les logs Vercel** :
    - Allez dans **Deployments** → Sélectionnez un déploiement → **Logs**
    - Cherchez les erreurs liées à reCAPTCHA
-
-5. **Vérifiez la console du navigateur en production** :
-   - Ouvrez `https://vinyl.report` dans votre navigateur
-   - Ouvrez la console développeur (F12)
-   - Vérifiez s'il y a des erreurs reCAPTCHA
+   - Vérifiez que le build s'est bien terminé
 
 ## 10. Documentation officielle
 

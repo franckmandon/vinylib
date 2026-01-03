@@ -55,30 +55,68 @@ export async function POST(request: NextRequest) {
     // Verify reCAPTCHA if token is provided
     if (recaptchaToken) {
       try {
-        const verifyResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/recaptcha/verify`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ token: recaptchaToken }),
-        });
+        console.log("[vinyls] Verifying reCAPTCHA token...");
+        
+        // Verify reCAPTCHA directly (server-side)
+        const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+        if (!secretKey) {
+          console.error("[vinyls] RECAPTCHA_SECRET_KEY is not set");
+          if (process.env.NODE_ENV === "production") {
+            return NextResponse.json(
+              { error: "reCAPTCHA configuration error" },
+              { status: 500 }
+            );
+          }
+        } else {
+          // Verify token with Google
+          const verifyUrl = "https://www.google.com/recaptcha/api/siteverify";
+          const response = await fetch(verifyUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: `secret=${secretKey}&response=${recaptchaToken}`,
+          });
 
-        if (!verifyResponse.ok) {
-          const verifyData = await verifyResponse.json();
-          console.error("[vinyls] reCAPTCHA verification failed:", verifyData);
+          const data = await response.json();
+
+          if (!data.success) {
+            console.error("[vinyls] reCAPTCHA verification failed:", data);
+            return NextResponse.json(
+              { error: "reCAPTCHA verification failed. Please try again." },
+              { status: 400 }
+            );
+          }
+
+          // Check score
+          const score = data.score || 0;
+          const threshold = parseFloat(process.env.RECAPTCHA_SCORE_THRESHOLD || "0.5");
+
+          if (score < threshold) {
+            console.warn(`[vinyls] reCAPTCHA score ${score} is below threshold ${threshold}`);
+            return NextResponse.json(
+              { error: "reCAPTCHA verification failed. Please try again." },
+              { status: 400 }
+            );
+          }
+
+          console.log("[vinyls] reCAPTCHA verified successfully. Score:", score);
+        }
+      } catch (error) {
+        console.error("[vinyls] Error verifying reCAPTCHA:", error);
+        if (process.env.NODE_ENV === "production") {
           return NextResponse.json(
             { error: "reCAPTCHA verification failed. Please try again." },
             { status: 400 }
           );
         }
-        console.log("[vinyls] reCAPTCHA verified successfully");
-      } catch (error) {
-        console.error("[vinyls] Error verifying reCAPTCHA:", error);
-        return NextResponse.json(
-          { error: "reCAPTCHA verification failed. Please try again." },
-          { status: 400 }
-        );
       }
+    } else if (process.env.NODE_ENV === "production") {
+      console.error("[vinyls] No reCAPTCHA token provided in production");
+      return NextResponse.json(
+        { error: "reCAPTCHA verification is required" },
+        { status: 400 }
+      );
     }
     
     if (!data.artist || !data.album) {
