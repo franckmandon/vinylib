@@ -1595,63 +1595,75 @@ export default function VinylForm({ vinyl, onSubmit, onCancel, readOnly = false,
                   <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
                     <div className="space-y-3">
                       {formData.trackList.map((track, index) => (
-                        <div key={index} className="flex items-start gap-3">
+                        <div key={index} className="flex flex-col md:flex-row items-start gap-2 md:gap-3">
                           {!isEditMode ? (
                             <>
-                              {track.spotifyLink && track.spotifyLink.includes('open.spotify.com') ? (
-                                <a
-                                  href={track.spotifyLink}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex-1 text-sm hover:underline"
-                                  style={{ color: '#10d05b' }}
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  {track.title}
-                                </a>
-                              ) : (
-                                <span className="flex-1 text-slate-900 dark:text-slate-100 text-sm">
-                                  {track.title}
-                                </span>
-                              )}
-                              {track.duration && (
-                                <span className="text-slate-500 dark:text-slate-400 min-w-[3rem] text-right text-sm">
-                                  {track.duration}
-                                </span>
-                              )}
+                              <div className="flex items-center justify-between gap-2 flex-1 min-w-0 w-full">
+                                {track.spotifyLink && track.spotifyLink.includes('open.spotify.com') ? (
+                                  <a
+                                    href={track.spotifyLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex-1 text-sm hover:underline min-w-0"
+                                    style={{ color: '#10d05b' }}
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    {track.title}
+                                  </a>
+                                ) : (
+                                  <span className="flex-1 text-slate-900 dark:text-slate-100 text-sm min-w-0">
+                                    {track.title}
+                                  </span>
+                                )}
+                                {track.duration && (
+                                  <span className="text-slate-500 dark:text-slate-400 min-w-[3rem] text-right text-sm flex-shrink-0">
+                                    {track.duration}
+                                  </span>
+                                )}
+                              </div>
                             </>
                           ) : (
                             <>
-                              <input
-                                type="text"
-                                value={track.title}
-                                onChange={(e) => handleTrackListChange(index, 'title', e.target.value)}
-                                placeholder="Track title"
-                                className="flex-1 px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none"
-                              />
-                              <input
-                                type="text"
-                                value={track.duration || ""}
-                                onChange={(e) => handleTrackListChange(index, 'duration', e.target.value)}
-                                placeholder="3:45"
-                                className="w-20 px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none"
-                              />
-                              <input
-                                type="url"
-                                value={track.spotifyLink || ""}
-                                onChange={(e) => handleTrackListChange(index, 'spotifyLink', e.target.value)}
-                                placeholder="Spotify link"
-                                className="w-48 px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none"
-                              />
+                              <div className="flex items-center justify-start md:justify-center w-auto md:w-8 flex-shrink-0 self-start md:self-center">
+                                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                  <span className="md:hidden">Track </span>{index + 1}.
+                                </span>
+                              </div>
+                              <div className="flex flex-col md:flex-row gap-2 flex-1 min-w-0 w-full">
+                                <input
+                                  type="text"
+                                  value={track.title}
+                                  onChange={(e) => handleTrackListChange(index, 'title', e.target.value)}
+                                  placeholder="Track title"
+                                  className="w-full md:flex-1 min-w-0 px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none"
+                                />
+                                <div className="flex gap-2 md:contents">
+                                  <input
+                                    type="text"
+                                    value={track.duration || ""}
+                                    onChange={(e) => handleTrackListChange(index, 'duration', e.target.value)}
+                                    placeholder="3:45"
+                                    className="w-1/4 md:w-20 px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none"
+                                  />
+                                  <input
+                                    type="url"
+                                    value={track.spotifyLink || ""}
+                                    onChange={(e) => handleTrackListChange(index, 'spotifyLink', e.target.value)}
+                                    placeholder="Spotify link"
+                                    className="w-full md:w-48 min-w-0 px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none"
+                                  />
+                                </div>
+                              </div>
                               <button
                                 type="button"
                                 onClick={() => handleRemoveTrack(index)}
-                                className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                                className="flex items-center gap-1 p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors flex-shrink-0"
                                 aria-label="Remove track"
                               >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                 </svg>
+                                <span className="text-sm md:hidden">Delete track</span>
                               </button>
                             </>
                           )}

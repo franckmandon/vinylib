@@ -20,6 +20,7 @@ export default function ContactPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [sentToEmail, setSentToEmail] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,6 +107,7 @@ export default function ContactPage() {
       }
 
       console.log("[contact-form] Success! Setting success state");
+      setSentToEmail(email.trim());
       setSuccess(true);
       setFirstName("");
       setLastName("");
@@ -162,7 +164,7 @@ export default function ContactPage() {
               </h3>
               <p className="text-green-700 dark:text-green-300 mb-4">
                 Thank you for contacting us. Your message has been sent to{" "}
-                <span className="font-semibold">contact@vinyl.report</span>.
+                <span className="font-semibold">{sentToEmail}</span>.
               </p>
               <p className="text-green-700 dark:text-green-300">
                 We&apos;ll get back to you as soon as possible.

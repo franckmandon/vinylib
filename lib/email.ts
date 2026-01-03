@@ -205,14 +205,13 @@ export async function sendContactEmail(
   country: string | undefined,
   message: string
 ) {
-  const fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
-  const contactEmail = "contact@vinyl.report";
+  const fromEmail = process.env.RESEND_FROM_EMAIL || "noreply@vinyl.report";
   
   console.log("[email] ========================================");
   console.log("[email] CONTACT FORM EMAIL");
   console.log("[email] ========================================");
   console.log("[email] From user:", email);
-  console.log("[email] To:", contactEmail);
+  console.log("[email] To:", email);
   console.log("[email] From email (sender):", fromEmail);
   console.log("[email] RESEND_API_KEY configured:", !!process.env.RESEND_API_KEY);
   console.log("[email] RESEND_FROM_EMAIL:", process.env.RESEND_FROM_EMAIL || "not set (using default)");
@@ -225,7 +224,7 @@ export async function sendContactEmail(
     console.log("[email] ========================================");
     console.log("[email] EMAIL DETAILS (would be sent):");
     console.log("[email] Subject:", `Contact Form Submission from ${firstName} ${lastName}`);
-    console.log("[email] To:", contactEmail);
+    console.log("[email] To:", email);
     console.log("[email] From:", fromEmail);
     console.log("[email] Reply-To:", email);
     console.log("[email] Name:", `${firstName} ${lastName}`);
@@ -240,7 +239,7 @@ export async function sendContactEmail(
     return {
       id: "dev-simulated-email-id",
       from: fromEmail,
-      to: contactEmail,
+      to: email,
     };
   }
 
@@ -254,7 +253,7 @@ export async function sendContactEmail(
     
     const emailData = {
       from: fromEmail,
-      to: contactEmail,
+      to: email,
       replyTo: email,
       subject: `Contact Form Submission from ${firstName} ${lastName}`,
       html: `
