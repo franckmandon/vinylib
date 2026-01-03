@@ -144,15 +144,15 @@ export default function ShufflePage() {
             onClick={handleRefresh}
             disabled={refreshing}
             className="flex items-center justify-center gap-2 px-4 py-2 text-white rounded-lg text-base font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed md:w-auto w-full"
-            style={{ backgroundColor: '#534AD3' }}
+            style={{ backgroundColor: 'rgb(37 99 235)' }}
             onMouseEnter={(e) => {
               if (!refreshing) {
-                e.currentTarget.style.backgroundColor = '#4539B8';
+                e.currentTarget.style.backgroundColor = 'rgb(29 78 216)';
               }
             }}
             onMouseLeave={(e) => {
               if (!refreshing) {
-                e.currentTarget.style.backgroundColor = '#534AD3';
+                e.currentTarget.style.backgroundColor = 'rgb(37 99 235)';
               }
             }}
           >

@@ -134,7 +134,7 @@ function HomeContent() {
               </div>
               <div className="bg-white dark:bg-slate-800 rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow">
                 <div className="mb-3">
-                  <svg className="w-10 h-10 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <svg className="w-10 h-10" style={{ color: '#534AD3' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                   </svg>
                 </div>
@@ -142,12 +142,12 @@ function HomeContent() {
                   Fast & smart collection building
                 </h3>
                 <p className="text-sm text-slate-600 dark:text-slate-400">
-                  Simply scan the barcode of your vinyl and watch as Vinyl Report instantly retrieves comprehensive album information from Discogs and Wikipedia. Whether you&apos;re at home or browsing in a record store, add records directly to your collection or bookmark them for later. No manual typing, no guesswork, just intelligent data retrieval that builds your digital archive one scan at a time.
+                  Simply <span style={{ backgroundColor: '#534AD3', color: 'white', padding: '2px 4px' }}>scan the barcode</span> of your vinyl and watch as Vinyl Report <span style={{ backgroundColor: '#534AD3', color: 'white', padding: '2px 4px' }}>instantly retrieves</span> comprehensive album information from Discogs and Wikipedia. Whether you&apos;re at home or browsing in a record store, <span style={{ backgroundColor: '#534AD3', color: 'white', padding: '2px 4px' }}>add records directly to your collection or bookmark them for later</span>. No manual typing, no guesswork, just intelligent data retrieval that builds your digital archive one scan at a time.
                 </p>
               </div>
               <div className="bg-white dark:bg-slate-800 rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow">
                 <div className="mb-3">
-                  <svg className="w-10 h-10 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <svg className="w-10 h-10" style={{ color: '#534AD3' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                   </svg>
                 </div>
@@ -155,12 +155,15 @@ function HomeContent() {
                   Social sharing & discovery
                 </h3>
                 <p className="text-sm text-slate-600 dark:text-slate-400">
-                  Share your collection with friends through AirDrop, email, or messaging to spark conversations about your favorite albums. Export your library as a CSV file for backups or analysis. Use the Shuffle Playlist feature to rediscover forgotten gems, letting Vinyl Report randomly select albums you haven&apos;t spun in a while.
+                  <span style={{ backgroundColor: '#534AD3', color: 'white', padding: '2px 4px' }}>Share your collection</span> with friends through AirDrop, email, or messaging to spark conversations about your favorite albums. <span style={{ backgroundColor: '#534AD3', color: 'white', padding: '2px 4px' }}>Export your library</span> as a CSV file for backups or analysis. <span style={{ backgroundColor: '#534AD3', color: 'white', padding: '2px 4px' }}>Use the Shuffle Playlist feature</span> to rediscover forgotten gems, letting Vinyl Report randomly select albums you haven&apos;t spun in a while.
                 </p>
               </div>
-              <div className="bg-white dark:bg-slate-800 rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow">
+              <div className="bg-white dark:bg-slate-800 rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow relative">
+                <span className="absolute top-0 left-0 px-2 py-0.5 text-white text-xs font-semibold rounded" style={{ backgroundColor: '#534AD3', transform: 'translate(-25%, -50%) rotate(-5deg)' }}>
+                  Beta
+                </span>
                 <div className="mb-3">
-                  <svg className="w-10 h-10 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <svg className="w-10 h-10" style={{ color: '#534AD3' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
                 </div>
@@ -168,7 +171,7 @@ function HomeContent() {
                   Detailed analytics & insights
                 </h3>
                 <p className="text-sm text-slate-600 dark:text-slate-400">
-                  Track your collection&apos;s evolution with rich statistics and filtering options that reveal your collecting patterns. Browse by genre or decade, filter by rating, monitor total value through purchase prices, and use condition tracking to identify records needing care. Your collection transforms from a static inventory into a dynamic dashboard.
+                  Track your collection&apos;s evolution with <span style={{ backgroundColor: '#534AD3', color: 'white', padding: '2px 4px' }}>rich statistics</span> and filtering options that reveal your collecting patterns. Browse by genre or decade, filter by rating, monitor total value through purchase prices, and use condition tracking to identify records needing care. <span style={{ backgroundColor: '#534AD3', color: 'white', padding: '2px 4px' }}>Your collection transforms from a static inventory into a dynamic dashboard</span>.
                 </p>
               </div>
             </div>

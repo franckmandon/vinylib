@@ -108,15 +108,14 @@ export default function UserMenu() {
             className="flex items-center justify-between px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
           >
             <span>My Dashboard</span>
-            <span className="ml-2 px-2 py-0.5 bg-blue-600 text-white text-xs font-semibold rounded">
+            <span className="ml-2 px-2 py-0.5 text-white text-xs font-semibold rounded" style={{ backgroundColor: '#534AD3', transform: 'rotate(-5deg)' }}>
               Beta
             </span>
           </Link>
           <Link
             href="/shuffle"
             onClick={() => setIsOpen(false)}
-            className="block px-4 py-2 text-sm text-white font-bold transition-colors"
-            style={{ backgroundColor: '#534AD3' }}
+            className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-bold"
           >
             Shuffle Playlist
           </Link>
