@@ -45,6 +45,7 @@ input[type="date"] {
   box-sizing: border-box !important;
   display: block !important;
   width: 100% !important;
+  text-align: left !important;
 }
 
 /* Uniformiser la largeur en mode disabled/readonly */
